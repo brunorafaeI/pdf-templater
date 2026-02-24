@@ -31,6 +31,7 @@ export const generateGotenbergHTML = (state: TemplateState) => {
         body {
             margin: 0;
             padding: 0;
+            background-color: white;
             font-family: sans-serif;
             -webkit-print-color-adjust: exact;
         }
@@ -40,7 +41,6 @@ export const generateGotenbergHTML = (state: TemplateState) => {
             height: ${A4_HEIGHT}px;
             overflow: hidden;
             background-color: ${canvasSettings.backgroundColor};
-            box-sizing: border-box;
         }
         .element {
             position: absolute;
@@ -54,20 +54,6 @@ export const generateGotenbergHTML = (state: TemplateState) => {
         img {
             display: block;
         }
-        @media screen {
-            body {
-                background: #555;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                min-height: 100vh;
-                gap: 20px;
-                padding: 20px;
-            }
-            .page {
-                box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            }
-        }
         @media print {
             body {
                 margin: 0;
@@ -80,7 +66,6 @@ export const generateGotenbergHTML = (state: TemplateState) => {
                 width: 100%;
                 height: 100%;
                 page-break-after: always;
-                box-shadow: none;
             }
             .page:last-child {
                 page-break-after: auto;
@@ -115,7 +100,8 @@ export const generateGotenbergHTML = (state: TemplateState) => {
       if (type === 'text') {
         indexHtml += `        <div style="width: 100%; height: 100%; overflow: hidden; word-wrap: break-word; white-space: pre-wrap;">${content}</div>\n`;
       } else if (type === 'image') {
-        indexHtml += `        <img src="${content}" style="width: 100%; height: 100%; object-fit: cover; border-radius: ${style.borderRadius || '0'};" />\n`;
+        const imgSrc = (content || '').replace(/"/g, '&quot;');
+        indexHtml += `        <img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: ${style.borderRadius || '0'};" />\n`;
       } else if (type === 'box' || type === 'circle' || type === 'line') {
         indexHtml += `        <div style="width: 100%; height: 100%; border-radius: ${style.borderRadius || '0'};"></div>\n`;
       } else if (type === 'svg') {
@@ -245,18 +231,18 @@ export const generateHTML = (
   backgroundColor: string
 ): string => {
   const styles = `
-    body { margin: 0; padding: 0; background: #555; display: flex; flex-direction: column; align-items: center; min-height: 100vh; font-family: sans-serif; gap: 20px; padding: 20px; }
+    body { margin: 0; padding: 0; background-color: white; font-family: sans-serif; }
     .page {
       position: relative;
       width: ${A4_WIDTH}px;
       height: ${A4_HEIGHT}px;
       background-color: ${backgroundColor};
       overflow: hidden;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
     }
     .element { position: absolute; box-sizing: border-box; }
+    img { display: block; }
     @media print {
-      body { background: white; display: block; padding: 0; gap: 0; }
+      body { background: white; display: block; padding: 0; }
       .page { box-shadow: none; margin: 0; page-break-after: always; width: 100%; height: 100%; }
       .page:last-child { page-break-after: auto; }
     }
@@ -280,7 +266,8 @@ export const generateHTML = (
             return `<div class="element" style="${commonStyle}">${el.content}</div>`;
           }
           if (el.type === 'image') {
-            return `<img class="element" src="${el.content}" style="${commonStyle}; object-fit: cover;" />`;
+            const imgSrc = (el.content || '').replace(/"/g, '&quot;');
+            return `<img class="element" src="${imgSrc}" style="${commonStyle}; object-fit: cover;" />`;
           }
           return `<div class="element" style="${commonStyle}; border-radius: ${el.style.borderRadius || '0'}"></div>`;
         })
