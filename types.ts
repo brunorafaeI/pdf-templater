@@ -17,10 +17,29 @@ export interface EditorElement {
   isLocked: boolean;
 }
 
+export interface HeaderSettings {
+  enabled: boolean;
+  height: number;
+  htmlContent?: string;
+  alignment: 'left' | 'center' | 'right';
+}
+
+export interface FooterSettings {
+  enabled: boolean;
+  height: number;
+  type: 'html' | 'pagination';
+  htmlContent?: string;
+  paginationPrefix?: string;
+  paginationFormat: 'numeric' | 'roman' | 'fraction';
+  alignment: 'left' | 'center' | 'right';
+}
+
 export interface Page {
   id: string;
   name: string;
   elements: EditorElement[];
+  headerOverride?: HeaderSettings;
+  footerOverride?: FooterSettings;
 }
 
 export interface CanvasSettings {
@@ -29,6 +48,14 @@ export interface CanvasSettings {
   showVerticalRuler: boolean;
   showGuides: boolean;
   autoSave: boolean;
+  header: HeaderSettings;
+  footer: FooterSettings;
+  margins: {
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+  };
 }
 
 export interface TemplateState {

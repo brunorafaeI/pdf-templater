@@ -5,8 +5,8 @@ import PropertiesPanel from './components/PropertiesPanel';
 import LayersPanel from './components/LayersPanel';
 import PagesPanel from './components/PagesPanel';
 import Canvas from './components/Canvas';
-import { Download, Save, Grid, ChevronLeft, ChevronRight, X, Minus, MoveVertical, MoveHorizontal, FileImage, FileType, Code, FileText, ChevronDown } from 'lucide-react';
-import { downloadHTML, downloadImage, printToPDF } from './services/exportService';
+import { Download, Save, Grid, ChevronLeft, ChevronRight, X, Minus, MoveVertical, MoveHorizontal, FileImage, FileType, Code, FileText, ChevronDown, FileCode } from 'lucide-react';
+import { downloadHTML, downloadImage, printToPDF, downloadGotenbergZip } from './services/exportService';
 
 const App: React.FC = () => {
   const [state, setState] = useState<TemplateState>({
@@ -19,7 +19,27 @@ const App: React.FC = () => {
       showHorizontalRuler: true,
       showVerticalRuler: true,
       showGuides: true,
-      autoSave: true
+      autoSave: true,
+      header: {
+        enabled: false,
+        height: 60,
+        htmlContent: '<h1 style="margin:0; font-size: 18px;">Page Title</h1>',
+        alignment: 'center'
+      },
+      footer: {
+        enabled: false,
+        height: 40,
+        type: 'pagination',
+        paginationPrefix: 'Page',
+        paginationFormat: 'numeric',
+        alignment: 'center'
+      },
+      margins: {
+        top: 40,
+        bottom: 40,
+        left: 40,
+        right: 40
+      }
     },
     horizontalGuides: [],
     verticalGuides: []
@@ -277,7 +297,17 @@ const App: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="border-t border-gray-100 p-2 bg-gray-50 rounded-b-lg">
+                  <div className="border-t border-gray-100 p-2 bg-gray-50 rounded-b-lg space-y-1">
+                     <button onClick={() => downloadGotenbergZip(state)} className="w-full text-left px-3 py-2.5 hover:bg-white hover:shadow-sm rounded-md flex items-start gap-3 transition-all group">
+                       <div className="p-2 bg-orange-100 rounded text-orange-600">
+                         <FileCode size={18} />
+                       </div>
+                       <div>
+                         <div className="text-sm font-medium text-orange-700">Gotenberg Package</div>
+                         <div className="text-xs text-orange-500/70">ZIP for Chromium PDF API</div>
+                       </div>
+                    </button>
+
                      <button onClick={() => downloadHTML(state.pages, state.canvasSettings.backgroundColor)} className="w-full text-left px-3 py-2.5 hover:bg-white hover:shadow-sm rounded-md flex items-start gap-3 transition-all group">
                        <div className="p-2 bg-blue-100 rounded text-blue-600">
                          <Code size={18} />
@@ -304,7 +334,8 @@ const App: React.FC = () => {
         {/* Center Canvas */}
         <div className="flex-1 flex flex-col relative overflow-hidden transition-all duration-300 ease-in-out">
             <Canvas 
-            elements={activePage.elements}
+            pages={state.pages}
+            activePageId={state.activePageId}
             selectedId={state.selectedId}
             onSelect={(id) => setState(prev => ({ ...prev, selectedId: id }))}
             onUpdate={updateElement}
@@ -361,6 +392,13 @@ const App: React.FC = () => {
                         onDelete={deleteElement}
                         canvasSettings={state.canvasSettings}
                         onCanvasSettingChange={(settings) => setState(prev => ({ ...prev, canvasSettings: { ...prev.canvasSettings, ...settings }}))}
+                        activePage={activePage}
+                        onPageUpdate={(id, updates) => {
+                            setState(prev => ({
+                                ...prev,
+                                pages: prev.pages.map(p => p.id === id ? { ...p, ...updates } : p)
+                            }));
+                        }}
                     />
                 )}
                 {activeRightTab === 'layers' && (

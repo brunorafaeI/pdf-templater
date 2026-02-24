@@ -1,17 +1,18 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { EditorElement, A4_WIDTH, A4_HEIGHT } from '../types';
+import { EditorElement, A4_WIDTH, A4_HEIGHT, Page, FooterSettings } from '../types';
 import Ruler from './Ruler';
 import { RotateCw, Lock } from 'lucide-react';
 import FloatingShapeToolbar from './FloatingShapeToolbar';
 
 interface CanvasProps {
-  elements: EditorElement[];
+  pages: Page[];
+  activePageId: string;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   onUpdate: (id: string, updates: Partial<EditorElement>) => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
-  canvasSettings: { backgroundColor: string; showHorizontalRuler: boolean; showVerticalRuler: boolean; showGuides: boolean };
+  canvasSettings: { backgroundColor: string; showHorizontalRuler: boolean; showVerticalRuler: boolean; showGuides: boolean; header: any; footer: any; margins: { top: number; bottom: number; left: number; right: number } };
   horizontalGuides: number[];
   verticalGuides: number[];
   onAddGuide: (type: 'horizontal' | 'vertical', pos: number) => void;
@@ -36,7 +37,8 @@ interface SnapLine {
 const SNAP_THRESHOLD = 5;
 
 const Canvas: React.FC<CanvasProps> = ({ 
-  elements, 
+  pages,
+  activePageId,
   selectedId, 
   onSelect, 
   onUpdate, 
@@ -48,6 +50,11 @@ const Canvas: React.FC<CanvasProps> = ({
   onAddGuide,
   onRemoveGuide
 }) => {
+  const activePage = pages.find(p => p.id === activePageId) || pages[0];
+  const elements = activePage.elements;
+  const pageIndex = pages.findIndex(p => p.id === activePageId);
+  const totalPages = pages.length;
+
   const canvasRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
@@ -58,13 +65,23 @@ const Canvas: React.FC<CanvasProps> = ({
   const [activeHandle, setActiveHandle] = useState<ResizeHandle | null>(null);
   const [activeRadiusHandle, setActiveRadiusHandle] = useState<RadiusHandle | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [initialElementState, setInitialElementState] = useState<{ x: number, y: number, w: number, h: number, r: number, borderRadius: string } | null>(null);
+  const [initialElementState, setInitialElementState] = useState<{ 
+    x: number, y: number, w: number, h: number, r: number, 
+    borderRadius: string,
+    rotationHandlePos?: 'top' | 'bottom',
+    startAngle?: number
+  } | null>(null);
   
+  const currentRotationPosRef = useRef<'top' | 'bottom'>('bottom');
+
   // Guide Dragging State
   const [activeGuide, setActiveGuide] = useState<ActiveGuideState | null>(null);
 
   // Smart Guides State
   const [snapLines, setSnapLines] = useState<SnapLine[]>([]);
+
+  // Toolbar Position State (for collision avoidance with rotation handle)
+  const [toolbarRect, setToolbarRect] = useState<{ top: number, left: number, width: number, height: number } | null>(null);
 
   // Sync scroll for rulers
   const handleScroll = () => {
@@ -75,6 +92,13 @@ const Canvas: React.FC<CanvasProps> = ({
       });
     }
   };
+
+  // Clear toolbarRect when selection changes
+  useEffect(() => {
+    if (!selectedId) {
+      setToolbarRect(null);
+    }
+  }, [selectedId]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -168,11 +192,19 @@ const Canvas: React.FC<CanvasProps> = ({
     e.stopPropagation();
     const el = elements.find(e => e.id === selectedId);
     if (!el || el.isLocked) return;
+    
+    const mouse = getMousePos(e);
+    const cx = el.x + el.width / 2;
+    const cy = el.y + el.height / 2;
+    const startAngle = Math.atan2(mouse.y - cy, mouse.x - cx);
+    
     setMode('rotating');
-    const mouse = getMousePos(e); 
+    setDragStart(mouse);
     setInitialElementState({ 
         x: el.x, y: el.y, w: el.width, h: el.height, r: el.rotation || 0,
-        borderRadius: el.style.borderRadius?.toString() || '0px'
+        borderRadius: el.style.borderRadius?.toString() || '0px',
+        rotationHandlePos: currentRotationPosRef.current,
+        startAngle: startAngle
     });
   };
 
@@ -193,8 +225,9 @@ const Canvas: React.FC<CanvasProps> = ({
   // Ruler & Guide Handlers
   const handleRulerDragStart = (e: React.MouseEvent, type: 'horizontal' | 'vertical') => {
     e.preventDefault();
+    const mouse = getMousePos(e);
     setMode('dragging_guide');
-    setActiveGuide({ type, pos: type === 'horizontal' ? e.clientY : e.clientX }); 
+    setActiveGuide({ type, pos: type === 'horizontal' ? mouse.y : mouse.x }); 
   };
 
   const handleGuideMouseDown = (e: React.MouseEvent, type: 'horizontal' | 'vertical', index: number, currentPos: number) => {
@@ -316,6 +349,10 @@ const Canvas: React.FC<CanvasProps> = ({
       if (bestSnapY === null && canvasSettings.showGuides) {
         newY = snapToGuides(newY, horizontalGuides);
       }
+
+      // Stage constraints
+      newX = Math.max(0, Math.min(A4_WIDTH - currentW, newX));
+      newY = Math.max(0, Math.min(A4_HEIGHT - currentH, newY));
       
       onUpdate(selectedId, { x: newX, y: newY });
 
@@ -331,14 +368,15 @@ const Canvas: React.FC<CanvasProps> = ({
       if (activeHandle.includes('n')) { newH = Math.max(10, h - dy); newY = y + dy; }
 
       onUpdate(selectedId, { x: newX, y: newY, width: newW, height: newH });
-    } else if (mode === 'rotating') {
-      const el = elements.find(e => e.id === selectedId);
-      if (!el) return;
-      const cx = el.x + el.width / 2;
-      const cy = el.y + el.height / 2;
-      const angleRad = Math.atan2(mouse.y - cy, mouse.x - cx);
-      let angleDeg = (angleRad * 180 / Math.PI) + 90;
-      onUpdate(selectedId, { rotation: angleDeg });
+    } else if (mode === 'rotating' && initialElementState && initialElementState.startAngle !== undefined) {
+      const cx = initialElementState.x + initialElementState.w / 2;
+      const cy = initialElementState.y + initialElementState.h / 2;
+      const currentAngle = Math.atan2(mouse.y - cy, mouse.x - cx);
+      
+      const deltaAngle = (currentAngle - initialElementState.startAngle) * 180 / Math.PI;
+      let newRotation = (initialElementState.r + deltaAngle) % 360;
+      
+      onUpdate(selectedId, { rotation: newRotation });
     } else if (mode === 'dragging_radius' && activeRadiusHandle) {
         const initialR = parseInt(initialElementState.borderRadius) || 0;
         const dx = mouse.x - dragStart.x;
@@ -394,6 +432,30 @@ const Canvas: React.FC<CanvasProps> = ({
   const topRowHeight = canvasSettings.showHorizontalRuler ? `${rulerSize}px` : '0px';
   const leftColWidth = canvasSettings.showVerticalRuler ? `${rulerSize}px` : '0px';
 
+  const toRoman = (num: number) => {
+    const lookup: { [key: string]: number } = { M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1 };
+    let roman = '';
+    for (const i in lookup) {
+      while (num >= lookup[i]) {
+        roman += i;
+        num -= lookup[i];
+      }
+    }
+    return roman;
+  };
+
+  const getPaginationText = (footer: FooterSettings) => {
+    const current = pageIndex + 1;
+    let formatted = '';
+    if (footer.paginationFormat === 'numeric') formatted = current.toString();
+    else if (footer.paginationFormat === 'roman') formatted = toRoman(current);
+    else if (footer.paginationFormat === 'fraction') formatted = `${current} / ${totalPages}`;
+
+    return `${footer.paginationPrefix ? footer.paginationPrefix + ' ' : ''}${formatted}`;
+  };
+
+  const header = activePage.headerOverride || canvasSettings.header;
+  const footer = activePage.footerOverride || canvasSettings.footer;
   const selectedElement = elements.find(el => el.id === selectedId);
 
   return (
@@ -408,14 +470,14 @@ const Canvas: React.FC<CanvasProps> = ({
 
       {/* 2. Horizontal Ruler Track */}
       <div className="relative bg-gray-100 border-b border-gray-300 overflow-hidden z-40">
-         <div style={{ transform: `translateX(-${scrollPos.x - 32}px)`, marginLeft: '32px' }}> 
+         <div style={{ transform: `translateX(-${scrollPos.x}px)`, marginLeft: '32px' }}> 
            <Ruler orientation="horizontal" length={A4_WIDTH + 200} onDragStart={(e) => handleRulerDragStart(e, 'horizontal')} />
          </div>
       </div>
 
       {/* 3. Vertical Ruler Track */}
       <div className="relative bg-gray-100 border-r border-gray-300 overflow-hidden z-40">
-         <div style={{ transform: `translateY(-${scrollPos.y - 32}px)`, marginTop: '32px' }}>
+         <div style={{ transform: `translateY(-${scrollPos.y}px)`, marginTop: '32px' }}>
            <Ruler orientation="vertical" length={A4_HEIGHT + 200} onDragStart={(e) => handleRulerDragStart(e, 'vertical')} />
          </div>
       </div>
@@ -489,6 +551,60 @@ const Canvas: React.FC<CanvasProps> = ({
                   }}
                />
             ))}
+
+            {/* Margins Reference Lines (Extended to edges) */}
+            <div className="absolute inset-0 pointer-events-none z-[4]">
+                {/* Top Margin */}
+                <div 
+                    className="absolute left-0 right-0 border-t border-dashed border-blue-200" 
+                    style={{ top: `${canvasSettings.margins.top}px` }}
+                />
+                {/* Bottom Margin */}
+                <div 
+                    className="absolute left-0 right-0 border-t border-dashed border-blue-200" 
+                    style={{ bottom: `${canvasSettings.margins.bottom}px` }}
+                />
+                {/* Left Margin */}
+                <div 
+                    className="absolute top-0 bottom-0 border-l border-dashed border-blue-200" 
+                    style={{ left: `${canvasSettings.margins.left}px` }}
+                />
+                {/* Right Margin */}
+                <div 
+                    className="absolute top-0 bottom-0 border-l border-dashed border-blue-200" 
+                    style={{ right: `${canvasSettings.margins.right}px` }}
+                />
+            </div>
+
+            {/* Header */}
+            {header.enabled && (
+                <div 
+                    className="absolute top-0 left-0 right-0 border-b border-gray-100 flex items-center px-8 text-gray-600 overflow-hidden pointer-events-none z-[5]"
+                    style={{ 
+                        height: `${header.height}px`,
+                        justifyContent: header.alignment === 'left' ? 'flex-start' : header.alignment === 'right' ? 'flex-end' : 'center'
+                    }}
+                >
+                    <div className="text-xs" dangerouslySetInnerHTML={{ __html: header.htmlContent || '' }} />
+                </div>
+            )}
+
+            {/* Footer */}
+            {footer.enabled && (
+                <div 
+                    className="absolute bottom-0 left-0 right-0 border-t border-gray-100 flex items-center px-8 text-gray-600 overflow-hidden pointer-events-none z-[5]"
+                    style={{ 
+                        height: `${footer.height}px`,
+                        justifyContent: footer.alignment === 'left' ? 'flex-start' : footer.alignment === 'right' ? 'flex-end' : 'center'
+                    }}
+                >
+                    {footer.type === 'html' ? (
+                        <div className="text-xs" dangerouslySetInnerHTML={{ __html: footer.htmlContent || '' }} />
+                    ) : (
+                        <div className="text-xs font-medium">{getPaginationText(footer)}</div>
+                    )}
+                </div>
+            )}
 
             {/* Elements */}
             {elements.map(el => {
@@ -597,13 +713,56 @@ const Canvas: React.FC<CanvasProps> = ({
                     )}
 
                     {/* Rotation Handle */}
-                    <div 
-                        className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-6 h-6 bg-white border border-gray-300 rounded-full flex items-center justify-center cursor-move hover:bg-blue-50 z-30"
-                        onMouseDown={handleRotateMouseDown}
-                    >
-                        <RotateCw size={12} className="text-gray-600" />
-                    </div>
-                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 h-8 w-px bg-blue-500 pointer-events-none"></div>
+                    {(() => {
+                        // Collision avoidance for rotation handle
+                        let rotationPos: 'top' | 'bottom' = 'bottom';
+                        
+                        // If we are currently rotating, use the position from when rotation started
+                        if (mode === 'rotating' && initialElementState?.rotationHandlePos) {
+                            rotationPos = initialElementState.rotationHandlePos;
+                        } else if (toolbarRect) {
+                            const handleSize = 24;
+                            const handleMargin = 8;
+                            
+                            // Bottom handle bounds
+                            const bHandle = {
+                                left: el.x + el.width / 2 - handleSize / 2,
+                                right: el.x + el.width / 2 + handleSize / 2,
+                                top: el.y + el.height + handleMargin,
+                                bottom: el.y + el.height + handleMargin + handleSize
+                            };
+                            
+                            const collidesWithBottom = (
+                                toolbarRect.left < bHandle.right &&
+                                toolbarRect.left + toolbarRect.width > bHandle.left &&
+                                toolbarRect.top < bHandle.bottom &&
+                                toolbarRect.top + toolbarRect.height > bHandle.top
+                            );
+                            
+                            if (collidesWithBottom) {
+                                rotationPos = 'top';
+                            }
+                        }
+
+                        // Update ref for the next interaction start
+                        currentRotationPosRef.current = rotationPos;
+
+                        const isTop = rotationPos === 'top';
+                        const handleClass = isTop ? "-top-8" : "-bottom-8";
+                        const lineClass = isTop ? "-top-8" : "-bottom-8";
+
+                        return (
+                            <>
+                                <div 
+                                    className={`absolute ${handleClass} left-1/2 -translate-x-1/2 w-6 h-6 bg-white border border-gray-300 rounded-full flex items-center justify-center cursor-move hover:bg-blue-50 z-[60] shadow-sm`}
+                                    onMouseDown={handleRotateMouseDown}
+                                >
+                                    <RotateCw size={12} className="text-gray-600" />
+                                </div>
+                                <div className={`absolute ${lineClass} left-1/2 -translate-x-1/2 h-8 w-px bg-blue-500 pointer-events-none z-[59]`}></div>
+                            </>
+                        );
+                    })()}
 
                     <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border border-blue-500 rounded-sm cursor-nw-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'nw')} />
                     <div className="absolute -top-1.5 left-1/2 -translate-x-1.5 w-3 h-3 bg-white border border-blue-500 rounded-sm cursor-n-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'n')} />
@@ -624,7 +783,12 @@ const Canvas: React.FC<CanvasProps> = ({
             {/* Floating Shape Toolbar */}
             {selectedElement && !selectedElement.isLocked && (
                 <div className="floating-toolbar">
-                  <FloatingShapeToolbar element={selectedElement} elements={elements} onUpdate={onUpdate} />
+                  <FloatingShapeToolbar 
+                    element={selectedElement} 
+                    elements={elements} 
+                    onUpdate={onUpdate} 
+                    onPositionChange={setToolbarRect}
+                  />
                 </div>
             )}
         </div>

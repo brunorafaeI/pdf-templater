@@ -7,12 +7,12 @@ interface LeftSidebarProps {
 }
 
 const UNSPLASH_IMAGES = [
-  'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&q=80',
+  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80',
+  'https://images.unsplash.com/photo-1633167606207-d840b5070fc2?w=400&q=80',
+  'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?w=400&q=80',
   'https://images.unsplash.com/photo-1557683316-973673baf926?w=400&q=80',
-  'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=400&q=80',
-  'https://images.unsplash.com/photo-1481487484168-9b995ecc1660?w=400&q=80',
   'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=400&q=80',
-  'https://images.unsplash.com/photo-1519681393784-d8e5b56524dd?w=400&q=80',
+  'https://images.unsplash.com/photo-1521747116042-5a810fda9664?w=400&q=80',
 ];
 
 const TEXT_STYLES = [

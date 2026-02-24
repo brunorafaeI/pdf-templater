@@ -499,13 +499,14 @@ interface FloatingShapeToolbarProps {
   elements: EditorElement[]; // All elements for extracting palette
   onUpdate: (id: string, updates: Partial<EditorElement>) => void;
   zoom?: number;
+  onPositionChange?: (pos: { top: number, left: number, width: number, height: number }) => void;
 }
 
-const FloatingShapeToolbar: React.FC<FloatingShapeToolbarProps> = ({ element, elements, onUpdate, zoom = 1 }) => {
+const FloatingShapeToolbar: React.FC<FloatingShapeToolbarProps> = ({ element, elements, onUpdate, zoom = 1, onPositionChange }) => {
   const [activePopover, setActivePopover] = useState<'fill' | 'border' | 'style' | null>(null);
+  const [isRadiusSplit, setIsRadiusSplit] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDraggingToolbar, setIsDraggingToolbar] = useState(false);
-  const [isRadiusSplit, setIsRadiusSplit] = useState(false);
   
   const toolbarRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef({ x: 0, y: 0 });
@@ -521,32 +522,6 @@ const FloatingShapeToolbar: React.FC<FloatingShapeToolbarProps> = ({ element, el
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  // Parse borderRadius (always returns array of 4 strings with unit)
-  const parseBorderRadius = (radiusStr?: string | number) => {
-      if (!radiusStr) return ['0px', '0px', '0px', '0px'];
-      const str = radiusStr.toString();
-      const parts = str.split(' ');
-      if (parts.length === 1) return [parts[0], parts[0], parts[0], parts[0]];
-      if (parts.length === 2) return [parts[0], parts[1], parts[0], parts[1]];
-      if (parts.length === 3) return [parts[0], parts[1], parts[2], parts[1]];
-      return [parts[0], parts[1], parts[2], parts[3]];
-  };
-
-  const radii = parseBorderRadius(element.style.borderRadius);
-
-  // Helper to update radius
-  const updateRadius = (index: number | 'all', value: number) => {
-      const newRadii = [...radii];
-      const valStr = `${value}px`;
-      
-      if (index === 'all') {
-          onUpdate(element.id, { style: { ...element.style, borderRadius: valStr } });
-      } else {
-          newRadii[index] = valStr;
-          onUpdate(element.id, { style: { ...element.style, borderRadius: newRadii.join(' ') } });
-      }
-  };
 
   // Toolbar Dragging Logic
   useEffect(() => {
@@ -583,6 +558,32 @@ const FloatingShapeToolbar: React.FC<FloatingShapeToolbarProps> = ({ element, el
       initialDragOffsetRef.current = { ...dragOffset };
   };
 
+  // Parse borderRadius (always returns array of 4 strings with unit)
+  const parseBorderRadius = (radiusStr?: string | number) => {
+      if (!radiusStr) return ['0px', '0px', '0px', '0px'];
+      const str = radiusStr.toString();
+      const parts = str.split(' ');
+      if (parts.length === 1) return [parts[0], parts[0], parts[0], parts[0]];
+      if (parts.length === 2) return [parts[0], parts[1], parts[0], parts[1]];
+      if (parts.length === 3) return [parts[0], parts[1], parts[2], parts[1]];
+      return [parts[0], parts[1], parts[2], parts[3]];
+  };
+
+  const radii = parseBorderRadius(element.style.borderRadius);
+
+  // Helper to update radius
+  const updateRadius = (index: number | 'all', value: number) => {
+      const newRadii = [...radii];
+      const valStr = `${value}px`;
+      
+      if (index === 'all') {
+          onUpdate(element.id, { style: { ...element.style, borderRadius: valStr } });
+      } else {
+          newRadii[index] = valStr;
+          onUpdate(element.id, { style: { ...element.style, borderRadius: newRadii.join(' ') } });
+      }
+  };
+
   if (!element || (element.type !== 'box' && element.type !== 'circle' && element.type !== 'svg' && element.type !== 'image')) return null;
 
   const currentFill = element.style.backgroundColor || 'transparent';
@@ -600,14 +601,90 @@ const FloatingShapeToolbar: React.FC<FloatingShapeToolbarProps> = ({ element, el
       }
   };
 
+  // Calculate position to avoid collision and stay within view
+  const toolbarHeight = 50;
+  const toolbarWidth = 400; // Approximate
+  const margin = 15;
+  const stageWidth = 800;
+  const stageHeight = 1131;
+  
+  // Base position (above the element)
+  let baseTop = element.y - toolbarHeight - margin;
+  let baseLeft = element.x;
+
+  // If too high, place below
+  if (baseTop < 20) {
+      baseTop = element.y + element.height + margin;
+  }
+
+  // Apply user drag offset
+  let finalLeft = baseLeft + dragOffset.x;
+  let finalTop = baseTop + dragOffset.y;
+
+  // Collision Avoidance Logic:
+  // If the toolbar overlaps the element, we push it to the nearest outside edge.
+  const toolbarRect = {
+      left: finalLeft,
+      right: finalLeft + toolbarWidth,
+      top: finalTop,
+      bottom: finalTop + toolbarHeight
+  };
+
+  const elementRect = {
+      left: element.x - margin,
+      right: element.x + element.width + margin,
+      top: element.y - margin,
+      bottom: element.y + element.height + margin
+  };
+
+  const isOverlapping = (
+      toolbarRect.left < elementRect.right &&
+      toolbarRect.right > elementRect.left &&
+      toolbarRect.top < elementRect.bottom &&
+      toolbarRect.bottom > elementRect.top
+  );
+
+  if (isOverlapping) {
+      // Find the distance to each edge and push to the closest one
+      const dists = [
+          { edge: 'top', d: Math.abs(toolbarRect.bottom - elementRect.top) },
+          { edge: 'bottom', d: Math.abs(toolbarRect.top - elementRect.bottom) },
+          { edge: 'left', d: Math.abs(toolbarRect.right - elementRect.left) },
+          { edge: 'right', d: Math.abs(toolbarRect.left - elementRect.right) }
+      ];
+      dists.sort((a, b) => a.d - b.d);
+      const closest = dists[0];
+
+      if (closest.edge === 'top') finalTop = elementRect.top - toolbarHeight;
+      else if (closest.edge === 'bottom') finalTop = elementRect.bottom;
+      else if (closest.edge === 'left') finalLeft = elementRect.left - toolbarWidth;
+      else if (closest.edge === 'right') finalLeft = elementRect.right;
+  }
+
+  // Stage constraints for toolbar
+  finalLeft = Math.max(margin, Math.min(stageWidth - toolbarWidth - margin, finalLeft));
+  finalTop = Math.max(margin, Math.min(stageHeight - toolbarHeight - margin, finalTop));
+
+  // Notify parent of position changes
+  useEffect(() => {
+    if (onPositionChange) {
+      onPositionChange({
+        top: finalTop,
+        left: finalLeft,
+        width: toolbarWidth,
+        height: toolbarHeight
+      });
+    }
+  }, [finalTop, finalLeft, onPositionChange, toolbarWidth, toolbarHeight]);
+
   return (
     <div 
       ref={toolbarRef}
       onMouseDown={startToolbarDrag}
       className={`absolute flex items-center gap-1 bg-white p-1.5 rounded-lg shadow-[0_4px_20px_-4px_rgba(0,0,0,0.15)] border border-gray-200 z-50 ${isDraggingToolbar ? 'cursor-grabbing' : 'cursor-grab'}`}
       style={{
-        left: element.x + dragOffset.x,
-        top: Math.max(80, element.y - 60) + dragOffset.y, 
+        left: finalLeft,
+        top: finalTop,
         transform: 'translateY(0)' 
       }}
     >

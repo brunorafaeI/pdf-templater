@@ -36,7 +36,7 @@ const Ruler: React.FC<RulerProps> = ({ orientation, length, scale = 1, onDragSta
       className={`bg-gray-50 border-gray-300 ${isHorizontal ? 'border-b w-full' : 'border-r h-full'} relative overflow-hidden cursor-crosshair hover:bg-gray-100 transition-colors z-40`}
       style={{
         width: isHorizontal ? '100%' : `${size}px`,
-        height: isHorizontal ? `${size}px` : '100%',
+        height: isHorizontal ? `${size}px` : `${length}px`,
       }}
       onMouseDown={onDragStart}
     >
