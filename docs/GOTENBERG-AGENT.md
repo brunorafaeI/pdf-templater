@@ -1,0 +1,149 @@
+# Gotenberg Convert HTML to PDF – Agent Instructions
+
+This document provides instructions and criteria for an AI agent implementing or integrating the **Gotenberg** API route **Convert HTML to PDF** (`/forms/chromium/convert/html`). Use it when generating HTML for PDF conversion or when calling the Gotenberg API.
+
+**Official documentation:** [Convert HTML to PDF | Gotenberg](https://gotenberg.dev/docs/convert-with-chromium/convert-html-to-pdf)
+
+---
+
+## 1. Endpoint and method
+
+- **URL:** `POST /forms/chromium/convert/html`
+- **Content-Type:** `multipart/form-data`
+- **Required file:** An HTML file named exactly **`index.html`** must be sent as the entry point.
+
+---
+
+## 2. Required and optional form parts
+
+### 2.1 Form files (multipart)
+
+| File name       | Required | Description                                      |
+|-----------------|----------|--------------------------------------------------|
+| `index.html`    | **Yes**  | Main HTML document to convert.                   |
+| `header.html`   | No       | Full HTML document for the header on every page.|
+| `footer.html`   | No       | Full HTML document for the footer on every page.|
+| Other assets    | No       | Images, CSS, fonts – see **Assets** below.       |
+
+### 2.2 Headers (request)
+
+| Header                    | Type   | Description                                  |
+|---------------------------|--------|----------------------------------------------|
+| `Gotenberg-Output-Filename` | string | Filename for the PDF (extension added by API).|
+| `Gotenberg-Trace`         | string | Custom request ID for logs.                  |
+
+---
+
+## 3. Assets: paths and structure
+
+- All uploaded files are placed in a **single temporary directory** in the container.
+- **Reference assets by filename only.** Do **not** use:
+  - Absolute paths (e.g. `/img.png`, `/css/style.css`).
+  - Subpaths that assume folder structure (e.g. `./assets/img.png`, `images/logo.png`).
+- **Correct:** `<img src="logo.png" />` when `logo.png` is uploaded next to `index.html`.
+- **Incorrect:** `<img src="/images/logo.png" />` or `./assets/logo.png`.
+- For small assets, **Base64 data URIs** in HTML avoid path and network issues.
+- **Avoid** the HTML `<base>` tag; it breaks resolution of relative asset paths.
+
+---
+
+## 4. Rendering behavior (form fields)
+
+Use these form fields to control layout and print behavior.
+
+### 4.1 Paper and margins (strings; default units: inches)
+
+| Field          | Default | Example / notes        |
+|----------------|---------|------------------------|
+| `paperWidth`   | `8.5`   | e.g. `8.27` for A4     |
+| `paperHeight`  | `11`    | e.g. `11.7` for A4     |
+| `marginTop`    | `0.39`  |                        |
+| `marginBottom` | `0.39`  |                        |
+| `marginLeft`   | `0.39`  |                        |
+| `marginRight`  | `0.39`  |                        |
+
+Standard sizes (inches, width × height): **A6** 4.13×5.83, **A5** 5.83×8.27, **A4** 8.27×11.7, **A3** 11.7×16.54; **Letter** 8.5×11 (default), **Legal** 8.5×14.
+
+### 4.2 Layout and print
+
+| Field                 | Type    | Default  | Notes |
+|-----------------------|---------|----------|-------|
+| `landscape`           | boolean | `false`  |       |
+| `scale`               | number  | `1.0`    | Zoom  |
+| `printBackground`     | boolean | `false`  | **Set to `true`** to keep background colors/graphics. |
+| `omitBackground`     | boolean | `false`  | Transparent background when no CSS background. |
+| `singlePage`         | boolean | `false`  | One long page; overrides `paperHeight` and `nativePageRanges`. |
+| `preferCssPageSize`   | boolean | `false`  | Use CSS `@page` size instead of API paper size. |
+| `emulatedMediaType`   | enum    | `print`  | `screen` or `print`. Use `screen` if PDF should match screen styling. |
+
+### 4.3 Dynamic content (optional)
+
+| Field                | Type   | Description |
+|----------------------|--------|-------------|
+| `waitDelay`          | string | e.g. `5s` – fixed delay before conversion. |
+| `waitForExpression`  | string | JS expression that must be `true` (e.g. `window.status === 'ready'`). |
+| `waitForSelector`    | string | CSS selector that must be visible (e.g. `#app-ready`). |
+
+Use `waitForExpression` or `waitForSelector` when content is rendered by JavaScript.
+
+---
+
+## 5. Header and footer (optional)
+
+- **Files:** `header.html` and/or `footer.html`, each a **full HTML document** (with `<html>`, `<head>`, `<body>`).
+- **Limitations:** No JavaScript; no external resources (use Base64 for images). Styles are isolated from the main document.
+- **Dynamic text:** Use these class names for Chromium to inject values: `pageNumber`, `totalPages`, `date`, `title`, `url`.
+- **Example (footer):**  
+  `Page <span class="pageNumber"></span> of <span class="totalPages"></span>`
+- For background colors in header/footer, use `-webkit-print-color-adjust: exact;` in CSS.
+
+---
+
+## 6. Criteria for HTML generated by this app
+
+When generating or validating HTML that will be sent to this route:
+
+1. **Entry point:** Provide a single main document as `index.html`.
+2. **Asset references:** Only reference assets by **filename** (no leading `/`, no subpaths like `assets/`).
+3. **PDF appearance:** If the design uses backgrounds or screen-like styling, recommend:
+   - `printBackground=true`
+   - `emulatedMediaType=screen` when appropriate.
+4. **Paper size:** For A4, use `paperWidth=8.27`, `paperHeight=11.7` (inches), or set `preferCssPageSize=true` and define `@page` in CSS.
+5. **Margins:** Pass margin form fields in inches (or use `@page` in CSS if `preferCssPageSize=true`).
+6. **Dynamic content:** If the page relies on JavaScript to render content, recommend `waitForExpression` or `waitForSelector` (or, as fallback, `waitDelay`).
+
+---
+
+## 7. Example cURL (minimal)
+
+```bash
+curl --request POST http://localhost:3000/forms/chromium/convert/html \
+  --form files=@index.html \
+  -o output.pdf
+```
+
+With options (e.g. A4, margins, print background):
+
+```bash
+curl --request POST http://localhost:3000/forms/chromium/convert/html \
+  --form files=@index.html \
+  --form paperWidth=8.27 \
+  --form paperHeight=11.7 \
+  --form marginTop=0.5 \
+  --form marginBottom=0.5 \
+  --form marginLeft=0.5 \
+  --form marginRight=0.5 \
+  --form printBackground=true \
+  -o output.pdf
+```
+
+---
+
+## 8. Responses
+
+- **200:** PDF returned; check `Content-Disposition` for filename.
+- **400:** Invalid request (e.g. missing `index.html`, invalid form).
+- **409:** Configured failure (e.g. invalid HTTP status, console exceptions) when enabled.
+- **503:** Request exceeded maximum duration (timeout).
+
+Use this document when implementing export flows, generating HTML for Gotenberg, or debugging PDF output.
