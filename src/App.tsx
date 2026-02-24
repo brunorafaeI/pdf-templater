@@ -1,12 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { EditorElement, TemplateState, ElementType, Page } from './types';
-import LeftSidebar from './components/LeftSidebar';
-import PropertiesPanel from './components/PropertiesPanel';
-import LayersPanel from './components/LayersPanel';
-import PagesPanel from './components/PagesPanel';
-import Canvas from './components/Canvas';
-import { Download, Save, Grid, ChevronLeft, ChevronRight, X, Minus, MoveVertical, MoveHorizontal, FileImage, FileType, Code, FileText, ChevronDown, FileCode } from 'lucide-react';
-import { downloadHTML, downloadImage, printToPDF, downloadGotenbergZip } from './services/exportService';
+import {
+  EditorElement,
+  TemplateState,
+  ElementType,
+  Page,
+} from '@/types';
+import LeftSidebar from '@/components/LeftSidebar';
+import PropertiesPanel from '@/components/PropertiesPanel';
+import LayersPanel from '@/components/LayersPanel';
+import PagesPanel from '@/components/PagesPanel';
+import Canvas from '@/components/Canvas';
+import {
+  Download,
+  Save,
+  ChevronLeft,
+  X,
+  MoveVertical,
+  MoveHorizontal,
+  FileImage,
+  FileType,
+  Code,
+  FileText,
+  ChevronDown,
+  FileCode,
+} from 'lucide-react';
+import {
+  downloadHTML,
+  downloadImage,
+  printToPDF,
+  downloadGotenbergZip,
+} from '@/services/export.service';
 
 const App: React.FC = () => {
   const [state, setState] = useState<TemplateState>({

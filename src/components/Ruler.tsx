@@ -7,16 +7,20 @@ interface RulerProps {
   onDragStart: (e: React.MouseEvent) => void;
 }
 
-const Ruler: React.FC<RulerProps> = ({ orientation, length, scale = 1, onDragStart }) => {
+const Ruler: React.FC<RulerProps> = ({
+  orientation,
+  length,
+  scale: _scale = 1,
+  onDragStart,
+}) => {
   const isHorizontal = orientation === 'horizontal';
-  const size = 24; // Thickness of ruler
+  const size = 24;
 
-  // Simple visual ticks
   const ticks = [];
   for (let i = 0; i < length; i += 50) {
     if (i === 0) continue;
     ticks.push(
-      <div 
+      <div
         key={i}
         className="absolute bg-gray-400 text-[9px] text-gray-500 pointer-events-none"
         style={{
@@ -32,7 +36,7 @@ const Ruler: React.FC<RulerProps> = ({ orientation, length, scale = 1, onDragSta
   }
 
   return (
-    <div 
+    <div
       className={`bg-gray-50 border-gray-300 ${isHorizontal ? 'border-b w-full' : 'border-r h-full'} relative overflow-hidden cursor-crosshair hover:bg-gray-100 transition-colors z-40`}
       style={{
         width: isHorizontal ? '100%' : `${size}px`,

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { EditorElement, A4_WIDTH, A4_HEIGHT, Page, FooterSettings } from '../types';
+import { EditorElement, A4_WIDTH, A4_HEIGHT, Page, FooterSettings } from '@/types';
 import Ruler from './Ruler';
 import { RotateCw, Lock } from 'lucide-react';
 import FloatingShapeToolbar from './FloatingShapeToolbar';
@@ -374,8 +374,8 @@ const Canvas: React.FC<CanvasProps> = ({
       const currentAngle = Math.atan2(mouse.y - cy, mouse.x - cx);
       
       const deltaAngle = (currentAngle - initialElementState.startAngle) * 180 / Math.PI;
-      let newRotation = (initialElementState.r + deltaAngle) % 360;
-      
+      const newRotation = (initialElementState.r + deltaAngle) % 360;
+
       onUpdate(selectedId, { rotation: newRotation });
     } else if (mode === 'dragging_radius' && activeRadiusHandle) {
         const initialR = parseInt(initialElementState.borderRadius) || 0;

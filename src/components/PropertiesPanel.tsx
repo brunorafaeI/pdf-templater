@@ -1,7 +1,22 @@
 import React, { useState } from 'react';
-import { EditorElement, CanvasSettings, Page, FooterSettings, HeaderSettings } from '../types';
-import { Trash2, Sparkles, AlignLeft, AlignCenter, AlignRight, Bold, Italic, RotateCw, Type as TypeIcon, Hash, Layout } from 'lucide-react';
-import { generateTextContent } from '../services/geminiService';
+import {
+  EditorElement,
+  CanvasSettings,
+  Page,
+  FooterSettings,
+  HeaderSettings,
+} from '@/types';
+import {
+  Trash2,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Bold,
+  Italic,
+  RotateCw,
+  Hash,
+  Layout,
+} from 'lucide-react';
 
 interface PropertiesPanelProps {
   element: EditorElement | null;
@@ -22,25 +37,14 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   activePage,
   onPageUpdate
 }) => {
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
   const [headerScope, setHeaderScope] = useState<'all' | 'current'>('all');
   const [footerScope, setFooterScope] = useState<'all' | 'current'>('all');
 
-  const handleStyleChange = (key: keyof React.CSSProperties, value: any) => {
+  const handleStyleChange = (key: keyof React.CSSProperties, value: unknown) => {
     if (!element) return;
     onChange(element.id, {
-      style: { ...element.style, [key]: value }
+      style: { ...element.style, [key]: value },
     });
-  };
-
-  const handleAI = async () => {
-    if (!element || !aiPrompt) return;
-    setIsGenerating(true);
-    const newText = await generateTextContent(aiPrompt, element.content);
-    onChange(element.id, { content: newText });
-    setIsGenerating(false);
-    setAiPrompt('');
   };
 
   const handleHeaderChange = (updates: Partial<HeaderSettings>) => {
@@ -449,30 +453,6 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 onChange={(e) => onChange(element.id, { content: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            </div>
-
-            {/* AI Magic */}
-            <div className="mb-4 p-3 bg-indigo-50 rounded-lg border border-indigo-100">
-               <div className="flex items-center gap-2 mb-2 text-indigo-700">
-                 <Sparkles size={16} />
-                 <span className="text-xs font-bold">AI Magic Write</span>
-               </div>
-               <div className="flex gap-2">
-                 <input 
-                   type="text" 
-                   value={aiPrompt}
-                   onChange={(e) => setAiPrompt(e.target.value)}
-                   placeholder="e.g., Professional bio..."
-                   className="flex-1 px-2 py-1 text-xs border border-indigo-200 rounded focus:outline-none text-gray-900"
-                 />
-                 <button 
-                  onClick={handleAI}
-                  disabled={isGenerating || !aiPrompt}
-                  className="bg-indigo-600 text-white text-xs px-3 py-1 rounded hover:bg-indigo-700 disabled:opacity-50"
-                 >
-                   {isGenerating ? '...' : 'Go'}
-                 </button>
-               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">

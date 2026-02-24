@@ -1,17 +1,23 @@
-import React from 'react';
+import type React from 'react';
 
-export type ElementType = 'text' | 'image' | 'box' | 'circle' | 'line' | 'svg';
+export type ElementType =
+  | 'text'
+  | 'image'
+  | 'box'
+  | 'circle'
+  | 'line'
+  | 'svg';
 
 export interface EditorElement {
   id: string;
-  name: string; // Layer name
+  name: string;
   type: ElementType;
   x: number;
   y: number;
   width: number;
   height: number;
   rotation?: number;
-  content?: string; 
+  content?: string;
   style: React.CSSProperties;
   isVisible: boolean;
   isLocked: boolean;

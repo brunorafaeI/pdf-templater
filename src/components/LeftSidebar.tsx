@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Type, Image as ImageIcon, Shapes, Upload, Search, X, ChevronLeft, Hexagon, Triangle, Circle, Square, Star, Heart } from 'lucide-react';
-import { ElementType } from '../types';
+import { ElementType } from '@/types';
 
 interface LeftSidebarProps {
   onAddElement: (type: ElementType, content?: string, extraStyle?: any) => void;

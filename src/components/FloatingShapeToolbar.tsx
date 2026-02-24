@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { EditorElement } from '../types';
+import { EditorElement } from '@/types';
 import { GripVertical, ChevronRight, ChevronDown, Trash2, Pipette, Maximize, CornerUpLeft, CornerUpRight, CornerDownLeft, CornerDownRight, Square } from 'lucide-react';
 
 // --- Color Utility Functions (Enhanced for Alpha/Hex8) ---
@@ -28,9 +28,10 @@ const hexToHsva = (hex: string) => {
 
   r /= 255; g /= 255; b /= 255;
   const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s, v = max;
+  let h = 0;
+  const v = max;
   const d = max - min;
-  s = max === 0 ? 0 : d / max;
+  const s = max === 0 ? 0 : d / max;
 
   if (max === min) {
     h = 0; 
@@ -49,19 +50,13 @@ const hexToHsva = (hex: string) => {
 const hsvaToHex = (h: number, s: number, v: number, a: number) => {
   if (a === 0 && h === 0 && s === 0 && v === 0) return 'transparent';
 
-  let r, g, b;
   const i = Math.floor(h / 60);
-  const f = h / 60 - i;
-  const p = v * (1 - s / 100);
-  const q = v * (1 - f * s / 100);
-  const t = v * (1 - (1 - f) * s / 100);
-  v = v / 100;
-  
-  const V = v; 
+  const _f = h / 60 - i;
+  const vNorm = v / 100;
   const S = s / 100;
-  const C = V * S;
+  const C = vNorm * S;
   const X = C * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = V - C;
+  const m = vNorm - C;
 
   let R1 = 0, G1 = 0, B1 = 0;
   if (h >= 0 && h < 60) { R1 = C; G1 = X; B1 = 0; }
@@ -210,11 +205,11 @@ const CustomColorPicker: React.FC<CustomColorPickerProps> = ({ color, onChange, 
   const handleEyeDropper = async () => {
     if (!('EyeDropper' in window)) return;
     try {
-        // @ts-ignore
+        // @ts-expect-error - EyeDropper is not in TypeScript DOM lib
         const eyeDropper = new window.EyeDropper();
         const result = await eyeDropper.open();
         updateColor(hexToHsva(result.sRGBHex), true);
-    } catch (e) {
+    } catch {
         console.log('EyeDropper canceled');
     }
   };
@@ -502,7 +497,7 @@ interface FloatingShapeToolbarProps {
   onPositionChange?: (pos: { top: number, left: number, width: number, height: number }) => void;
 }
 
-const FloatingShapeToolbar: React.FC<FloatingShapeToolbarProps> = ({ element, elements, onUpdate, zoom = 1, onPositionChange }) => {
+const FloatingShapeToolbar: React.FC<FloatingShapeToolbarProps> = ({ element, elements, onUpdate, zoom: _zoom = 1, onPositionChange }) => {
   const [activePopover, setActivePopover] = useState<'fill' | 'border' | 'style' | null>(null);
   const [isRadiusSplit, setIsRadiusSplit] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -584,7 +579,49 @@ const FloatingShapeToolbar: React.FC<FloatingShapeToolbarProps> = ({ element, el
       }
   };
 
-  if (!element || (element.type !== 'box' && element.type !== 'circle' && element.type !== 'svg' && element.type !== 'image')) return null;
+  const toolbarHeight = 50;
+  const toolbarWidth = 400;
+  const margin = 15;
+  const stageWidth = 800;
+  const stageHeight = 1131;
+
+  const shouldShow = element && (element.type === 'box' || element.type === 'circle' || element.type === 'svg' || element.type === 'image');
+  let finalTop = 0;
+  let finalLeft = 0;
+  if (shouldShow) {
+    let baseTop = element.y - toolbarHeight - margin;
+    const baseLeft = element.x;
+    if (baseTop < 20) baseTop = element.y + element.height + margin;
+    finalLeft = baseLeft + dragOffset.x;
+    finalTop = baseTop + dragOffset.y;
+    const toolbarRect = { left: finalLeft, right: finalLeft + toolbarWidth, top: finalTop, bottom: finalTop + toolbarHeight };
+    const elementRect = { left: element.x - margin, right: element.x + element.width + margin, top: element.y - margin, bottom: element.y + element.height + margin };
+    const isOverlapping = toolbarRect.left < elementRect.right && toolbarRect.right > elementRect.left && toolbarRect.top < elementRect.bottom && toolbarRect.bottom > elementRect.top;
+    if (isOverlapping) {
+      const dists = [
+        { edge: 'top' as const, d: Math.abs(toolbarRect.bottom - elementRect.top) },
+        { edge: 'bottom' as const, d: Math.abs(toolbarRect.top - elementRect.bottom) },
+        { edge: 'left' as const, d: Math.abs(toolbarRect.right - elementRect.left) },
+        { edge: 'right' as const, d: Math.abs(toolbarRect.left - elementRect.right) }
+      ];
+      dists.sort((a, b) => a.d - b.d);
+      const closest = dists[0];
+      if (closest.edge === 'top') finalTop = elementRect.top - toolbarHeight;
+      else if (closest.edge === 'bottom') finalTop = elementRect.bottom;
+      else if (closest.edge === 'left') finalLeft = elementRect.left - toolbarWidth;
+      else if (closest.edge === 'right') finalLeft = elementRect.right;
+    }
+    finalLeft = Math.max(margin, Math.min(stageWidth - toolbarWidth - margin, finalLeft));
+    finalTop = Math.max(margin, Math.min(stageHeight - toolbarHeight - margin, finalTop));
+  }
+
+  useEffect(() => {
+    if (onPositionChange && shouldShow) {
+      onPositionChange({ top: finalTop, left: finalLeft, width: toolbarWidth, height: toolbarHeight });
+    }
+  }, [finalTop, finalLeft, onPositionChange, toolbarWidth, toolbarHeight, shouldShow]);
+
+  if (!shouldShow) return null;
 
   const currentFill = element.style.backgroundColor || 'transparent';
   const currentBorderColor = element.style.borderColor || 'transparent';
@@ -594,88 +631,11 @@ const FloatingShapeToolbar: React.FC<FloatingShapeToolbarProps> = ({ element, el
       if (type === 'fill') {
           onUpdate(element.id, { style: { ...element.style, backgroundColor: color } });
       } else {
-          // If adding color to border with 0 width, default to 2px
           const newWidth = currentBorderWidth === 0 && color !== 'transparent' ? '2px' : element.style.borderWidth;
           const newStyle = element.style.borderStyle || 'solid';
           onUpdate(element.id, { style: { ...element.style, borderColor: color, borderWidth: newWidth, borderStyle: newStyle } });
       }
   };
-
-  // Calculate position to avoid collision and stay within view
-  const toolbarHeight = 50;
-  const toolbarWidth = 400; // Approximate
-  const margin = 15;
-  const stageWidth = 800;
-  const stageHeight = 1131;
-  
-  // Base position (above the element)
-  let baseTop = element.y - toolbarHeight - margin;
-  let baseLeft = element.x;
-
-  // If too high, place below
-  if (baseTop < 20) {
-      baseTop = element.y + element.height + margin;
-  }
-
-  // Apply user drag offset
-  let finalLeft = baseLeft + dragOffset.x;
-  let finalTop = baseTop + dragOffset.y;
-
-  // Collision Avoidance Logic:
-  // If the toolbar overlaps the element, we push it to the nearest outside edge.
-  const toolbarRect = {
-      left: finalLeft,
-      right: finalLeft + toolbarWidth,
-      top: finalTop,
-      bottom: finalTop + toolbarHeight
-  };
-
-  const elementRect = {
-      left: element.x - margin,
-      right: element.x + element.width + margin,
-      top: element.y - margin,
-      bottom: element.y + element.height + margin
-  };
-
-  const isOverlapping = (
-      toolbarRect.left < elementRect.right &&
-      toolbarRect.right > elementRect.left &&
-      toolbarRect.top < elementRect.bottom &&
-      toolbarRect.bottom > elementRect.top
-  );
-
-  if (isOverlapping) {
-      // Find the distance to each edge and push to the closest one
-      const dists = [
-          { edge: 'top', d: Math.abs(toolbarRect.bottom - elementRect.top) },
-          { edge: 'bottom', d: Math.abs(toolbarRect.top - elementRect.bottom) },
-          { edge: 'left', d: Math.abs(toolbarRect.right - elementRect.left) },
-          { edge: 'right', d: Math.abs(toolbarRect.left - elementRect.right) }
-      ];
-      dists.sort((a, b) => a.d - b.d);
-      const closest = dists[0];
-
-      if (closest.edge === 'top') finalTop = elementRect.top - toolbarHeight;
-      else if (closest.edge === 'bottom') finalTop = elementRect.bottom;
-      else if (closest.edge === 'left') finalLeft = elementRect.left - toolbarWidth;
-      else if (closest.edge === 'right') finalLeft = elementRect.right;
-  }
-
-  // Stage constraints for toolbar
-  finalLeft = Math.max(margin, Math.min(stageWidth - toolbarWidth - margin, finalLeft));
-  finalTop = Math.max(margin, Math.min(stageHeight - toolbarHeight - margin, finalTop));
-
-  // Notify parent of position changes
-  useEffect(() => {
-    if (onPositionChange) {
-      onPositionChange({
-        top: finalTop,
-        left: finalLeft,
-        width: toolbarWidth,
-        height: toolbarHeight
-      });
-    }
-  }, [finalTop, finalLeft, onPositionChange, toolbarWidth, toolbarHeight]);
 
   return (
     <div 
