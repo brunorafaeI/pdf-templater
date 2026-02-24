@@ -41,7 +41,7 @@ export const generateGotenbergHTML = (state: TemplateState) => {
             height: ${A4_HEIGHT}px;
             overflow: hidden;
             background-color: ${canvasSettings.backgroundColor};
-            page-break-after: always;
+            box-sizing: border-box;
         }
         .element {
             position: absolute;
@@ -57,12 +57,18 @@ export const generateGotenbergHTML = (state: TemplateState) => {
         }
         @media print {
             body {
-                width: ${A4_WIDTH}px;
+                margin: 0;
+                padding: 0;
             }
             .page {
-                page-break-after: always;
                 margin: 0;
                 border: none;
+                width: 100%;
+                height: 100%;
+                page-break-after: always;
+            }
+            .page:last-child {
+                page-break-after: auto;
             }
         }
     </style>
@@ -198,11 +204,11 @@ export const downloadGotenbergZip = async (state: TemplateState) => {
 Template Name: ${state.name || 'Untitled'}
 A4 Dimensions: ${A4_WIDTH}px x ${A4_HEIGHT}px
 
-Recommended Gotenberg API Parameters:
-- marginTop: ${state.canvasSettings.margins.top / 96} (in inches, approx)
-- marginBottom: ${state.canvasSettings.margins.bottom / 96}
-- marginLeft: ${state.canvasSettings.margins.left / 96}
-- marginRight: ${state.canvasSettings.margins.right / 96}
+Recommended Gotenberg API Parameters (form fields):
+- paperWidth=8.27
+- paperHeight=11.7
+- marginTop, marginBottom, marginLeft, marginRight (in inches, e.g. 0.39)
+- printBackground=true (to preserve background colors)
 
 See docs/GOTENBERG-AGENT.md for full API usage (convert-html-to-pdf).
 `;
