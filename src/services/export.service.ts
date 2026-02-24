@@ -31,7 +31,6 @@ export const generateGotenbergHTML = (state: TemplateState) => {
         body {
             margin: 0;
             padding: 0;
-            background-color: white;
             font-family: sans-serif;
             -webkit-print-color-adjust: exact;
         }
@@ -55,10 +54,25 @@ export const generateGotenbergHTML = (state: TemplateState) => {
         img {
             display: block;
         }
+        @media screen {
+            body {
+                background: #555;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                min-height: 100vh;
+                gap: 20px;
+                padding: 20px;
+            }
+            .page {
+                box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            }
+        }
         @media print {
             body {
                 margin: 0;
                 padding: 0;
+                background: white;
             }
             .page {
                 margin: 0;
@@ -66,6 +80,7 @@ export const generateGotenbergHTML = (state: TemplateState) => {
                 width: 100%;
                 height: 100%;
                 page-break-after: always;
+                box-shadow: none;
             }
             .page:last-child {
                 page-break-after: auto;
