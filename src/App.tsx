@@ -23,6 +23,7 @@ import {
   FileText,
   ChevronDown,
   FileCode,
+  Send,
 } from 'lucide-react';
 import {
   downloadHTML,
@@ -30,6 +31,13 @@ import {
   printToPDF,
   downloadGotenbergZip,
 } from '@/services/export.service';
+import {
+  sendHtmlToPdfAndDownload,
+  type GotenbergEndpointType,
+} from '@/services/gotenberg.client';
+
+const GOTENBERG_URL_KEY = 'pdf-templater-gotenberg-url';
+const DEFAULT_GOTENBERG_URL = 'https://n8n.securit.fr/webhook/65bc3e65-3597-4c6f-a0cc-69df4a980239';
 
 const App: React.FC = () => {
   const [state, setState] = useState<TemplateState>({
@@ -71,6 +79,13 @@ const App: React.FC = () => {
   const [activeRightTab, setActiveRightTab] = useState<'properties' | 'layers' | 'pages'>('pages');
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isGotenbergModalOpen, setIsGotenbergModalOpen] = useState(false);
+  const [gotenbergUrl, setGotenbergUrl] = useState(() =>
+    typeof window !== 'undefined' ? localStorage.getItem(GOTENBERG_URL_KEY) || DEFAULT_GOTENBERG_URL : DEFAULT_GOTENBERG_URL
+  );
+  const [gotenbergEndpointType, setGotenbergEndpointType] = useState<GotenbergEndpointType>('n8n');
+  const [gotenbergError, setGotenbergError] = useState<string | null>(null);
+  const [gotenbergLoading, setGotenbergLoading] = useState(false);
 
   // Helper to get active page index and object
   const activePageIndex = state.pages.findIndex(p => p.id === state.activePageId);
@@ -340,11 +355,85 @@ const App: React.FC = () => {
                          <div className="text-xs text-blue-500/70">Get the full source code</div>
                        </div>
                     </button>
+
+                     <button
+                       onClick={() => { setIsExportOpen(false); setIsGotenbergModalOpen(true); setGotenbergError(null); }}
+                       className="w-full text-left px-3 py-2.5 hover:bg-white hover:shadow-sm rounded-md flex items-start gap-3 transition-all group"
+                     >
+                       <div className="p-2 bg-emerald-100 rounded text-emerald-600">
+                         <Send size={18} />
+                       </div>
+                       <div>
+                         <div className="text-sm font-medium text-emerald-700">Send to API → PDF</div>
+                         <div className="text-xs text-emerald-500/70">n8n webhook or Gotenberg, get PDF</div>
+                       </div>
+                    </button>
                   </div>
               </div>
            </div>
         </div>
       </header>
+
+      {/* Gotenberg / n8n API modal */}
+      {isGotenbergModalOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50" onClick={() => setIsGotenbergModalOpen(false)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-5" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-800">Export to PDF via API</h3>
+              <button onClick={() => setIsGotenbergModalOpen(false)} className="p-1 rounded hover:bg-gray-100 text-gray-500"><X size={18} /></button>
+            </div>
+            <p className="text-sm text-gray-500 mb-3">Send the template HTML to your endpoint and download the generated PDF.</p>
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-gray-700">Endpoint URL</label>
+              <input
+                type="url"
+                value={gotenbergUrl}
+                onChange={e => setGotenbergUrl(e.target.value)}
+                placeholder={DEFAULT_GOTENBERG_URL}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              />
+              <label className="block text-sm font-medium text-gray-700">Endpoint type</label>
+              <select
+                value={gotenbergEndpointType}
+                onChange={e => setGotenbergEndpointType(e.target.value as GotenbergEndpointType)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              >
+                <option value="n8n">n8n webhook (form field &quot;data&quot;)</option>
+                <option value="gotenberg">Gotenberg API (Chromium convert/html)</option>
+              </select>
+            </div>
+            {gotenbergError && (
+              <div className="mt-3 p-2 rounded-lg bg-red-50 text-red-700 text-sm">{gotenbergError}</div>
+            )}
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={() => setIsGotenbergModalOpen(false)} className="px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+              <button
+                disabled={gotenbergLoading}
+                onClick={async () => {
+                  setGotenbergError(null);
+                  try {
+                    if (gotenbergUrl.trim()) localStorage.setItem(GOTENBERG_URL_KEY, gotenbergUrl.trim());
+                    setGotenbergLoading(true);
+                    await sendHtmlToPdfAndDownload(state, {
+                      url: gotenbergUrl.trim() || DEFAULT_GOTENBERG_URL,
+                      endpointType: gotenbergEndpointType,
+                      outputFilename: state.name || 'template',
+                    });
+                    setIsGotenbergModalOpen(false);
+                  } catch (err) {
+                    setGotenbergError(err instanceof Error ? err.message : 'Request failed');
+                  } finally {
+                    setGotenbergLoading(false);
+                  }
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg flex items-center gap-2"
+              >
+                {gotenbergLoading ? 'Sending…' : 'Send & download PDF'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Workspace */}
       <div className="flex flex-1 overflow-hidden relative">
