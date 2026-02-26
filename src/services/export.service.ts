@@ -1,26 +1,21 @@
-import {
-  Page,
-  A4_WIDTH,
-  A4_HEIGHT,
-  TemplateState,
-} from '@/types';
-import html2canvas from 'html2canvas';
-import JSZip from 'jszip';
+import { Page, A4_WIDTH, A4_HEIGHT, TemplateState } from '@/types'
+import html2canvas from 'html2canvas'
+import JSZip from 'jszip'
 
 const cssToStyleString = (style: Record<string, unknown>): string => {
-  if (!style) return '';
+  if (!style) return ''
   return Object.entries(style)
     .map(([key, value]) => {
-      if (value === undefined || value === null) return '';
-      const kebabKey = key.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
-      return `${kebabKey}: ${value};`;
+      if (value === undefined || value === null) return ''
+      const kebabKey = key.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+      return `${kebabKey}: ${value};`
     })
     .filter((s) => s !== '')
-    .join(' ');
-};
+    .join(' ')
+}
 
 export const generateGotenbergHTML = (state: TemplateState) => {
-  const { pages, canvasSettings } = state;
+  const { pages, canvasSettings } = state
 
   let indexHtml = `<!DOCTYPE html>
 <html lang="en">
@@ -41,6 +36,7 @@ export const generateGotenbergHTML = (state: TemplateState) => {
             height: ${A4_HEIGHT}px;
             overflow: hidden;
             background-color: ${canvasSettings.backgroundColor};
+            page-break-after: always;
         }
         .element {
             position: absolute;
@@ -51,8 +47,29 @@ export const generateGotenbergHTML = (state: TemplateState) => {
             height: 100%;
             position: relative;
         }
-        img {
+        .element-content img {
             display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        @media screen {
+            body {
+                background: #555;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                min-height: 100vh;
+                gap: 20px;
+                padding: 20px;
+            }
+            .page {
+                flex-shrink: 0;
+                min-width: ${A4_WIDTH}px;
+                min-height: ${A4_HEIGHT}px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.5);
+                page-break-after: always;
+            }
         }
         @media print {
             body {
@@ -63,25 +80,23 @@ export const generateGotenbergHTML = (state: TemplateState) => {
             .page {
                 margin: 0;
                 border: none;
-                width: 100%;
-                height: 100%;
+                box-shadow: none;
+                width: ${A4_WIDTH}px;
+                height: ${A4_HEIGHT}px;
                 page-break-after: always;
-            }
-            .page:last-child {
-                page-break-after: auto;
             }
         }
     </style>
 </head>
 <body>
-`;
+`
 
   pages.forEach((page) => {
-    indexHtml += `  <div class="page">\n`;
+    indexHtml += `  <div class="page">\n`
     page.elements.forEach((el) => {
-      if (!el.isVisible) return;
+      if (!el.isVisible) return
 
-      const { x, y, width, height, rotation, style, type, content } = el;
+      const { x, y, width, height, rotation, style, type, content } = el
 
       const positionStyle = {
         left: `${x}px`,
@@ -89,37 +104,37 @@ export const generateGotenbergHTML = (state: TemplateState) => {
         width: `${width}px`,
         height: `${height}px`,
         transform: `rotate(${rotation || 0}deg)`,
-      };
+      }
 
-      const combinedStyle = { ...style, ...positionStyle };
-      const styleStr = cssToStyleString(combinedStyle as Record<string, unknown>);
+      const combinedStyle = { ...style, ...positionStyle }
+      const styleStr = cssToStyleString(combinedStyle as Record<string, unknown>)
 
-      indexHtml += `    <div class="element" style="${styleStr}">\n`;
-      indexHtml += `      <div class="element-content">\n`;
+      indexHtml += `    <div class="element" style="${styleStr}">\n`
+      indexHtml += `      <div class="element-content">\n`
 
       if (type === 'text') {
-        indexHtml += `        <div style="width: 100%; height: 100%; overflow: hidden; word-wrap: break-word; white-space: pre-wrap;">${content}</div>\n`;
+        indexHtml += `        <div style="width: 100%; height: 100%; overflow: hidden; word-wrap: break-word; white-space: pre-wrap;">${content}</div>\n`
       } else if (type === 'image') {
-        const imgSrc = (content || '').replace(/"/g, '&quot;');
-        indexHtml += `        <img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: ${style.borderRadius || '0'};" />\n`;
+        const imgSrc = (content || '').replace(/"/g, '&quot;')
+        indexHtml += `        <img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: ${style.borderRadius || '0'};" />\n`
       } else if (type === 'box' || type === 'circle' || type === 'line') {
-        indexHtml += `        <div style="width: 100%; height: 100%; border-radius: ${style.borderRadius || '0'};"></div>\n`;
+        indexHtml += `        <div style="width: 100%; height: 100%; border-radius: ${style.borderRadius || '0'};"></div>\n`
       } else if (type === 'svg') {
         indexHtml += `        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width: 100%; height: 100%; overflow: visible;">
           <path d="${content}" fill="${style.backgroundColor || 'transparent'}" stroke="${style.borderColor || 'transparent'}" stroke-width="${parseInt(style.borderWidth?.toString() || '0') * (100 / width)}" vector-effect="non-scaling-stroke" />
-        </svg>\n`;
+        </svg>\n`
       }
 
-      indexHtml += `      </div>\n`;
-      indexHtml += `    </div>\n`;
-    });
-    indexHtml += `  </div>\n`;
-  });
+      indexHtml += `      </div>\n`
+      indexHtml += `    </div>\n`
+    })
+    indexHtml += `  </div>\n`
+  })
 
-  indexHtml += `</body>\n</html>`;
+  indexHtml += `</body>\n</html>`
 
-  const header = canvasSettings.header;
-  let headerHtml = '';
+  const header = canvasSettings.header
+  let headerHtml = ''
   if (header.enabled) {
     headerHtml = `<!DOCTYPE html>
 <html>
@@ -148,11 +163,11 @@ export const generateGotenbergHTML = (state: TemplateState) => {
         ${header.htmlContent || ''}
     </div>
 </body>
-</html>`;
+</html>`
   }
 
-  const footer = canvasSettings.footer;
-  let footerHtml = '';
+  const footer = canvasSettings.footer
+  let footerHtml = ''
   if (footer.enabled) {
     footerHtml = `<!DOCTYPE html>
 <html>
@@ -178,10 +193,10 @@ export const generateGotenbergHTML = (state: TemplateState) => {
 </head>
 <body>
     <div class="footer">
-        ${footer.type === 'html' ? (footer.htmlContent || '') : `<span>${footer.paginationPrefix || ''} <span class="pageNumber"></span> / <span class="totalPages"></span></span>`}
+        ${footer.type === 'html' ? footer.htmlContent || '' : `<span>${footer.paginationPrefix || ''} <span class="pageNumber"></span> / <span class="totalPages"></span></span>`}
     </div>
 </body>
-</html>`;
+</html>`
   }
 
   return {
@@ -189,16 +204,16 @@ export const generateGotenbergHTML = (state: TemplateState) => {
     headerHtml,
     footerHtml,
     margins: canvasSettings.margins,
-  };
-};
+  }
+}
 
 export const downloadGotenbergZip = async (state: TemplateState) => {
-  const { indexHtml, headerHtml, footerHtml } = generateGotenbergHTML(state);
-  const zip = new JSZip();
+  const { indexHtml, headerHtml, footerHtml } = generateGotenbergHTML(state)
+  const zip = new JSZip()
 
-  zip.file('index.html', indexHtml);
-  if (headerHtml) zip.file('header.html', headerHtml);
-  if (footerHtml) zip.file('footer.html', footerHtml);
+  zip.file('index.html', indexHtml)
+  if (headerHtml) zip.file('header.html', headerHtml)
+  if (footerHtml) zip.file('footer.html', footerHtml)
 
   const readme = `Gotenberg Export Info
 ---------------------
@@ -212,24 +227,22 @@ Recommended Gotenberg API Parameters (form fields):
 - printBackground=true (to preserve background colors)
 
 See docs/GOTENBERG-AGENT.md for full API usage (convert-html-to-pdf).
-`;
-  zip.file('readme.txt', readme);
+`
+  zip.file('readme.txt', readme)
 
-  const content = await zip.generateAsync({ type: 'blob' });
-  const url = URL.createObjectURL(content);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${state.name || 'template'}-gotenberg.zip`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-};
+  const content = await zip.generateAsync({ type: 'blob' })
+  const url = URL.createObjectURL(content)
+  const a = document.createElement('a')
+  
+  a.href = url
+  a.download = `${state.name || 'template'}-gotenberg.zip`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
 
-export const generateHTML = (
-  pages: Page[],
-  backgroundColor: string
-): string => {
+export const generateHTML = (pages: Page[], backgroundColor: string): string => {
   const styles = `
     body { margin: 0; padding: 0; background-color: white; font-family: sans-serif; }
     .page {
@@ -240,13 +253,16 @@ export const generateHTML = (
       overflow: hidden;
     }
     .element { position: absolute; box-sizing: border-box; }
-    img { display: block; }
-    @media print {
-      body { background: white; display: block; padding: 0; }
-      .page { box-shadow: none; margin: 0; page-break-after: always; width: 100%; height: 100%; }
-      .page:last-child { page-break-after: auto; }
+    .element img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    @media screen {
+      body { background: #555; display: flex; flex-direction: column; align-items: center; min-height: 100vh; gap: 20px; padding: 20px; }
+      .page { flex-shrink: 0; min-width: ${A4_WIDTH}px; min-height: ${A4_HEIGHT}px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
     }
-  `;
+    @media print {
+      html, body { background: white; margin: 0; padding: 0; }
+      .page { box-shadow: none; margin: 0; page-break-after: always; width: ${A4_WIDTH}px; height: ${A4_HEIGHT}px; }
+    }
+  `
 
   const pagesHtml = pages
     .map((page, index) => {
@@ -255,31 +271,31 @@ export const generateHTML = (
         .map((el) => {
           const styleString = Object.entries(el.style)
             .map(([k, v]) => {
-              const key = k.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
-              return `${key}: ${v}`;
+              const key = k.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+              return `${key}: ${v}`
             })
-            .join('; ');
+            .join('; ')
 
-          const commonStyle = `left: ${el.x}px; top: ${el.y}px; width: ${el.width}px; height: ${el.height}px; ${styleString}`;
+          const commonStyle = `left: ${el.x}px; top: ${el.y}px; width: ${el.width}px; height: ${el.height}px; ${styleString}`
 
           if (el.type === 'text') {
-            return `<div class="element" style="${commonStyle}">${el.content}</div>`;
+            return `<div class="element" style="${commonStyle}">${el.content}</div>`
           }
           if (el.type === 'image') {
-            const imgSrc = (el.content || '').replace(/"/g, '&quot;');
-            return `<img class="element" src="${imgSrc}" style="${commonStyle}; object-fit: cover;" />`;
+            const imgSrc = (el.content || '').replace(/"/g, '&quot;')
+            return `<img class="element" src="${imgSrc}" style="${commonStyle}; object-fit: cover;" />`
           }
-          return `<div class="element" style="${commonStyle}; border-radius: ${el.style.borderRadius || '0'}"></div>`;
+          return `<div class="element" style="${commonStyle}; border-radius: ${el.style.borderRadius || '0'}"></div>`
         })
-        .join('\n');
+        .join('\n')
 
       return `
     <!-- Page ${index + 1}: ${page.name} -->
     <div class="page" id="page-${page.id}">
       ${elementsHtml}
-    </div>`;
+    </div>`
     })
-    .join('\n');
+    .join('\n')
 
   return `
 <!DOCTYPE html>
@@ -293,66 +309,65 @@ export const generateHTML = (
   ${pagesHtml}
 </body>
 </html>
-  `;
-};
+  `
+}
 
-export const downloadHTML = (
-  pages: Page[],
-  backgroundColor: string
-): void => {
-  const html = generateHTML(pages, backgroundColor);
-  const blob = new Blob([html], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'template.html';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-};
+export const downloadHTML = (pages: Page[], backgroundColor: string): void => {
+  const html = generateHTML(pages, backgroundColor)
+  const blob = new Blob([html], { type: 'text/html' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+
+  a.href = url
+  a.download = 'template.html'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
 
 export const downloadImage = async (
   elementId: string,
   format: 'png' | 'jpeg'
 ): Promise<void> => {
-  const element = document.getElementById(elementId);
-  if (!element) return;
+  const element = document.getElementById(elementId)
+  if (!element) return
 
-  const controls = element.querySelectorAll('.controls');
-  controls.forEach((el: Element) => ((el as HTMLElement).style.display = 'none'));
+  const controls = element.querySelectorAll('.controls')
+  controls.forEach((el: Element) => ((el as HTMLElement).style.display = 'none'))
 
   try {
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
       backgroundColor: null,
-    });
+    })
 
-    const link = document.createElement('a');
-    link.download = `template.${format}`;
-    link.href = canvas.toDataURL(`image/${format}`, 1.0);
-    link.click();
+    const link = document.createElement('a')
+
+    link.download = `template.${format}`
+    link.href = canvas.toDataURL(`image/${format}`, 1.0)
+    link.click()
   } catch (err) {
-    console.error('Export failed', err);
-    alert('Export failed. Note: External images must allow CORS.');
+    console.error('Export failed', err)
+    alert('Export failed. Note: External images must allow CORS.')
   } finally {
-    controls.forEach((el: Element) => ((el as HTMLElement).style.display = ''));
+    controls.forEach((el: Element) => ((el as HTMLElement).style.display = ''))
   }
-};
+}
 
-export const printToPDF = (
-  pages: Page[],
-  backgroundColor: string
-): void => {
-  const html = generateHTML(pages, backgroundColor);
-  const printWindow = window.open('', '_blank');
+export const printToPDF = (pages: Page[], backgroundColor: string): void => {
+  const html = generateHTML(pages, backgroundColor)
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
+  const printWindow = window.open(url, '_blank')
+
   if (printWindow) {
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.onload = () => {
-      printWindow.focus();
-      printWindow.print();
-    };
+    printWindow.addEventListener('load', () => {
+      printWindow.focus()
+      printWindow.print()
+      URL.revokeObjectURL(url)
+    })
+  } else {
+    URL.revokeObjectURL(url)
   }
-};
+}
