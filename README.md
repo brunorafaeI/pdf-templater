@@ -11,7 +11,7 @@ pdf-templater/
 │   ├── App.tsx               # Layout principal e estado do editor
 │   ├── types/                # Tipos TypeScript (elementos, páginas, canvas)
 │   ├── components/           # Componentes React (Canvas, painéis, sidebar)
-│   └── services/             # Export (HTML, imagem, ZIP Gotenberg)
+│   └── services/             # Export (HTML, imagem, ZIP Gotenberg), Gotenberg client (API/n8n)
 ├── docs/
 │   └── GOTENBERG-AGENT.md    # Instruções para uso da API Gotenberg (convert-html-to-pdf)
 ├── index.html
@@ -77,6 +77,7 @@ npm run preview
   - **PDF (navegador):** impressão via `window.print()`.
   - **HTML/CSS:** download do HTML completo.
   - **Pacote Gotenberg:** ZIP com `index.html` (+ opcional `header.html`/`footer.html`) e `readme.txt` com sugestões de parâmetros para a API.
+  - **Enviar para API → PDF:** envia o HTML diretamente para um endpoint (webhook n8n ou API Gotenberg) e faz o download do PDF gerado.
 
 ## Integração com Gotenberg
 
@@ -92,6 +93,8 @@ Para converter esse HTML em PDF no servidor:
 2. Envie o ZIP ou os arquivos em **multipart/form-data** para:
    - **POST** `/forms/chromium/convert/html`
 3. Use os parâmetros descritos em `readme.txt` e, em detalhe, em **docs/GOTENBERG-AGENT.md**.
+
+**Enviar para API → PDF (n8n / Gotenberg):** no menu Export, use **“Send to API → PDF”**. Configure a URL do endpoint (por padrão, um webhook n8n que espera POST com form-data, campo **`data`** = ficheiro binário HTML). O fluxo n8n pode encaminhar o pedido para a API Gotenberg e devolver o PDF; a aplicação faz o download do ficheiro devolvido. Alternativamente, selecione “Gotenberg API” e use o URL completo da rota Chromium (ex.: `http://gotenberg:3000/forms/chromium/convert/html`).
 
 Referência oficial da rota: [Convert HTML to PDF | Gotenberg](https://gotenberg.dev/docs/convert-with-chromium/convert-html-to-pdf).
 
