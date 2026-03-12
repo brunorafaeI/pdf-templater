@@ -668,7 +668,7 @@ const Canvas: React.FC<CanvasProps> = ({
                            const visualOffset = Math.min(Math.max(12, currentR), maxR); 
                            
                            // Handle styling
-                           const handleStyle = "absolute w-3 h-3 bg-white border border-blue-500 rounded-full cursor-grab z-40 hover:scale-125 transition-transform flex items-center justify-center";
+                           const handleStyle = "absolute w-2 h-2 bg-white border border-blue-500 rounded-full cursor-grab z-40 hover:scale-125 transition-transform flex items-center justify-center";
                           
 
                            return (
@@ -748,32 +748,31 @@ const Canvas: React.FC<CanvasProps> = ({
                         currentRotationPosRef.current = rotationPos;
 
                         const isTop = rotationPos === 'top';
-                        const handleClass = isTop ? "-top-8" : "-bottom-8";
-                        const lineClass = isTop ? "-top-8" : "-bottom-8";
+                        const handleClass = isTop ? "-top-6" : "-bottom-6";
 
                         return (
                             <>
                                 <div 
-                                    className={`absolute ${handleClass} left-1/2 -translate-x-1/2 w-6 h-6 bg-white border border-gray-300 rounded-full flex items-center justify-center cursor-move hover:bg-blue-50 z-[60] shadow-sm`}
+                                    className={`absolute ${handleClass} left-1/2 -translate-x-1/2 p-0.5 bg-white border border-gray-300 rounded-full flex items-center justify-center cursor-move hover:bg-blue-50 z-[60] shadow-sm`}
                                     onMouseDown={handleRotateMouseDown}
                                 >
-                                    <RotateCw size={12} className="text-gray-600" />
+                                    <RotateCw size={12} className="text-zinc-700" />
                                 </div>
-                                <div className={`absolute ${lineClass} left-1/2 -translate-x-1/2 h-8 w-px bg-blue-500 pointer-events-none z-[59]`}></div>
                             </>
                         );
                     })()}
 
-                    <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border border-blue-500 rounded-sm cursor-nw-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'nw')} />
-                    <div className="absolute -top-1.5 left-1/2 -translate-x-1.5 w-3 h-3 bg-white border border-blue-500 rounded-sm cursor-n-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'n')} />
-                    <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border border-blue-500 rounded-sm cursor-ne-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'ne')} />
-                    
-                    <div className="absolute top-1/2 -translate-y-1.5 -left-1.5 w-3 h-3 bg-white border border-blue-500 rounded-sm cursor-w-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'w')} />
-                    <div className="absolute top-1/2 -translate-y-1.5 -right-1.5 w-3 h-3 bg-white border border-blue-500 rounded-sm cursor-e-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'e')} />
+                    {/* Corner resize handles - circular */}
+                    <div className="absolute -top-1 -left-1 w-2.5 h-2.5 bg-white border border-blue-500 rounded-full cursor-nw-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'nw')} />
+                    <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-white border border-blue-500 rounded-full cursor-ne-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'ne')} />
+                    <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-white border border-blue-500 rounded-full cursor-se-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'se')} />
+                    <div className="absolute -bottom-1 -left-1 w-2.5 h-2.5 bg-white border border-blue-500 rounded-full cursor-sw-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'sw')} />
 
-                    <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border border-blue-500 rounded-sm cursor-sw-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'sw')} />
-                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1.5 w-3 h-3 bg-white border border-blue-500 rounded-sm cursor-s-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 's')} />
-                    <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border border-blue-500 rounded-sm cursor-se-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'se')} />
+                    {/* Side resize handles - small rounded rectangles */}
+                    <div className="absolute -top-0.5 left-1/2 -translate-x-1.5 w-4 h-1.5 bg-white border border-blue-500 rounded-md cursor-n-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'n')} />
+                    <div className="absolute top-1/2 -translate-y-1/2 -right-0.5 w-1.5 h-4 bg-white border border-blue-500 rounded-md cursor-e-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'e')} />
+                    <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-4 h-1.5 bg-white border border-blue-500 rounded-md cursor-s-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 's')} />
+                    <div className="absolute top-1/2 -translate-y-1/2 -left-0.5 w-1.5 h-4 bg-white border border-blue-500 rounded-md cursor-w-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'w')} />
                     </>
                 )}
                 </div>
