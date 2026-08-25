@@ -74,5 +74,4 @@ export interface TemplateState {
   verticalGuides: number[];
 }
 
-export const A4_WIDTH = 794;
-export const A4_HEIGHT = 1123;
+export { A4_WIDTH, A4_HEIGHT } from '@/constants/template'
