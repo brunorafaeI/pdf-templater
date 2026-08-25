@@ -1,6 +1,6 @@
 import React from 'react'
 import { EditorElement } from '@/types'
-import { LucideIconComponent } from '@/components/icon'
+import { LucideIconComponent, type LucideIconName } from '@/components/icon'
 
 export type ResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
 export type RadiusHandle = 'tl' | 'tr' | 'bl' | 'br'
@@ -43,7 +43,7 @@ const ElementNode: React.FC<ElementNodeProps> = ({
       }}
       onMouseDown={(e) => onElementMouseDown(e, el.id)}
     >
-      <div className="w-full h-full relative" style={el.type === 'svg' ? {} : el.style}>
+      <div className="w-full h-full relative" style={el.type === 'svg' || el.type === 'icon' ? {} : el.style}>
         {el.type === 'text' && (
           <div className="w-full h-full overflow-hidden break-words pointer-events-none whitespace-pre-wrap">
             {el.content}
@@ -61,6 +61,17 @@ const ElementNode: React.FC<ElementNodeProps> = ({
             className="w-full h-full pointer-events-none"
             style={{ borderRadius: el.style.borderRadius }}
           />
+        )}
+                {el.type === 'icon' && el.content && (
+          <div className="w-full h-full flex items-center justify-center pointer-events-none">
+            <LucideIconComponent
+              icon={el.content as LucideIconName}
+              color={String(el.style.color || '#334155')}
+              strokeWidth={Number(el.style.strokeWidth ?? 2)}
+              className="w-full h-full"
+              style={{ width: '100%', height: '100%' }}
+            />
+          </div>
         )}
         {el.type === 'svg' && (
           <svg

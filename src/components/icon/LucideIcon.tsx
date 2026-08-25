@@ -4,6 +4,9 @@ import { icons, type LucideProps } from 'lucide-react'
 /** Valid Lucide icon names (PascalCase keys from `lucide-react`). */
 export type LucideIconName = keyof typeof icons
 
+/** All Lucide icon names available in the installed package. */
+export const LUCIDE_ICON_NAMES = Object.keys(icons) as LucideIconName[]
+
 export interface LucideIconProps extends LucideProps {
   /** Icon name, e.g. `"Download"`, `"Trash2"`, `"FlipHorizontal2"`. */
   icon: LucideIconName

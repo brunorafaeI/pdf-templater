@@ -8,6 +8,7 @@ import {
   type ShapeDefinition,
 } from '@/constants/library'
 import { ElementType } from '@/types'
+import IconsLibrary from './IconsLibrary'
 
 interface LeftSidebarProps {
   onAddElement: (
@@ -17,6 +18,8 @@ interface LeftSidebarProps {
     size?: { width: number; height: number }
   ) => void
 }
+
+type SidebarTab = 'text' | 'images' | 'shapes' | 'icons'
 
 const ShapePreview: React.FC<{ shape: ShapeDefinition }> = ({ shape }) => {
   if (shape.lucideIcon) {
@@ -48,12 +51,17 @@ const ShapePreview: React.FC<{ shape: ShapeDefinition }> = ({ shape }) => {
   }
 }
 
-const LeftSidebar: React.FC<LeftSidebarProps> = ({ onAddElement }) => {
-  const [activeTab, setActiveTab] = useState<'text' | 'images' | 'shapes' | null>(
-    null
-  )
+const TAB_LABELS: Record<SidebarTab, string> = {
+  text: 'Text',
+  images: 'Images',
+  shapes: 'Shapes',
+  icons: 'Icons',
+}
 
-  const toggleTab = (tab: 'text' | 'images' | 'shapes') => {
+const LeftSidebar: React.FC<LeftSidebarProps> = ({ onAddElement }) => {
+  const [activeTab, setActiveTab] = useState<SidebarTab | null>(null)
+
+  const toggleTab = (tab: SidebarTab) => {
     setActiveTab((current) => (current === tab ? null : tab))
   }
 
@@ -70,7 +78,6 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ onAddElement }) => {
 
   return (
     <div className="flex h-full transition-all duration-300 ease-in-out">
-      {/* Icon Rail (Always Visible) */}
       <div className="w-16 bg-slate-900 flex flex-col items-center py-4 gap-6 text-slate-400 border-r border-slate-800 z-30 flex-shrink-0">
         <button
           onClick={() => toggleTab('text')}
@@ -93,13 +100,19 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ onAddElement }) => {
           <LucideIconComponent icon="Shapes" size={20} />
           <span className="text-[10px] font-medium">Shapes</span>
         </button>
+        <button
+          onClick={() => toggleTab('icons')}
+          className={`flex flex-col items-center gap-1 p-2 rounded w-full transition-colors ${activeTab === 'icons' ? 'text-white bg-slate-800 border-l-4 border-blue-500' : 'hover:text-white hover:bg-slate-800/50'}`}
+        >
+          <LucideIconComponent icon="Sparkles" size={20} />
+          <span className="text-[10px] font-medium">Icons</span>
+        </button>
       </div>
 
-      {/* Panel Content (Collapsible) */}
       {activeTab && (
         <div className="w-64 bg-slate-800 border-r border-slate-700 flex flex-col z-20 animate-in slide-in-from-left-5 duration-200">
           <div className="p-4 border-b border-slate-700 flex justify-between items-center">
-            <h3 className="text-white font-semibold capitalize">{activeTab}</h3>
+            <h3 className="text-white font-semibold">{TAB_LABELS[activeTab]}</h3>
             <button
               onClick={() => setActiveTab(null)}
               className="text-slate-400 hover:text-white"
@@ -108,7 +121,11 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ onAddElement }) => {
             </button>
           </div>
 
-          <div className="p-4 flex flex-col gap-4 overflow-y-auto flex-1">
+          <div
+            className={`p-4 flex flex-col gap-4 flex-1 min-h-0 ${
+              activeTab === 'icons' ? 'overflow-hidden' : 'overflow-y-auto'
+            }`}
+          >
             {activeTab === 'text' && (
               <div className="space-y-6">
                 <div className="space-y-3">
@@ -129,7 +146,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ onAddElement }) => {
                             : style.fontSize === '24px'
                               ? '16px'
                               : '14px',
-                        fontWeight: style.fontWeight as React.CSSProperties['fontWeight'],
+                        fontWeight:
+                          style.fontWeight as React.CSSProperties['fontWeight'],
                       }}
                     >
                       {style.label}
@@ -144,7 +162,9 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ onAddElement }) => {
                   {FUN_TEXTS.map((style, i) => (
                     <button
                       key={i}
-                      onClick={() => onAddElement('text', style.content, { ...style })}
+                      onClick={() =>
+                        onAddElement('text', style.content, { ...style })
+                      }
                       className="h-20 bg-slate-900/50 hover:bg-slate-900 rounded flex items-center justify-center p-2 text-center break-words transition-colors border border-slate-700 hover:border-slate-600"
                       style={{
                         color: style.color,
@@ -179,7 +199,9 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ onAddElement }) => {
                   <div className="text-blue-400 mb-2 flex justify-center">
                     <LucideIconComponent icon="Upload" size={24} />
                   </div>
-                  <span className="text-xs text-gray-400 block">Upload media</span>
+                  <span className="text-xs text-gray-400 block">
+                    Upload media
+                  </span>
                 </div>
 
                 <div>
@@ -248,6 +270,19 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ onAddElement }) => {
                   ))}
                 </div>
               </div>
+            )}
+
+            {activeTab === 'icons' && (
+              <IconsLibrary
+                onPick={(iconName) =>
+                  onAddElement(
+                    'icon',
+                    iconName,
+                    { color: '#334155' },
+                    { width: 64, height: 64 }
+                  )
+                }
+              />
             )}
           </div>
         </div>

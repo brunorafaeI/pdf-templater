@@ -9,6 +9,7 @@ const DEFAULT_SIZES: Record<ElementType, Size> = {
   circle: { width: 150, height: 150 },
   line: { width: 200, height: 2 },
   svg: { width: 200, height: 150 },
+  icon: { width: 64, height: 64 },
 }
 
 export const getDefaultElementSize = (
@@ -27,7 +28,7 @@ export const getDefaultElementStyles = (
   extraStyle: CSSProperties = {}
 ): CSSProperties => ({
   backgroundColor: type === 'box' ? '#3b82f6' : 'transparent',
-  color: '#000000',
+  color: type === 'icon' ? '#334155' : '#000000',
   fontSize: '16px',
   padding: type === 'text' ? '8px' : '0px',
   ...extraStyle,

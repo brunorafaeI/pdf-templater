@@ -56,9 +56,11 @@ export function useTemplateEditor() {
         const newElement: EditorElement = {
           id,
           name:
-            content && type === 'text'
-              ? content.substring(0, 15)
-              : `${type} ${page.elements.length + 1}`,
+            type === 'icon' && content
+              ? content
+              : content && type === 'text'
+                ? content.substring(0, 15)
+                : `${type} ${page.elements.length + 1}`,
           type,
           x: 50,
           y: 50,

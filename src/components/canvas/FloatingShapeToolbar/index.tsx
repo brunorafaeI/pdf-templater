@@ -99,7 +99,7 @@ const FloatingShapeToolbar: React.FC<FloatingShapeToolbarProps> = ({ element, el
   const stageWidth = 800;
   const stageHeight = 1131;
 
-  const shouldShow = element && (element.type === 'box' || element.type === 'circle' || element.type === 'svg' || element.type === 'image');
+  const shouldShow = element && (element.type === 'box' || element.type === 'circle' || element.type === 'svg' || element.type === 'image' || element.type === 'icon');
   let finalTop = 0;
   let finalLeft = 0;
   if (shouldShow) {
@@ -137,13 +137,20 @@ const FloatingShapeToolbar: React.FC<FloatingShapeToolbarProps> = ({ element, el
 
   if (!shouldShow) return null;
 
-  const currentFill = element.style.backgroundColor || 'transparent';
+  const isIcon = element.type === 'icon';
+  const currentFill = isIcon
+    ? String(element.style.color || '#334155')
+    : (element.style.backgroundColor || 'transparent');
   const currentBorderColor = element.style.borderColor || 'transparent';
   const currentBorderWidth = parseInt(element.style.borderWidth?.toString() || '0');
 
   const handleColorUpdate = (color: string, type: 'fill' | 'border') => {
       if (type === 'fill') {
-          onUpdate(element.id, { style: { ...element.style, backgroundColor: color } });
+          if (isIcon) {
+            onUpdate(element.id, { style: { ...element.style, color } });
+          } else {
+            onUpdate(element.id, { style: { ...element.style, backgroundColor: color } });
+          }
       } else {
           const newWidth = currentBorderWidth === 0 && color !== 'transparent' ? '2px' : element.style.borderWidth;
           const newStyle = element.style.borderStyle || 'solid';
@@ -178,7 +185,7 @@ const FloatingShapeToolbar: React.FC<FloatingShapeToolbarProps> = ({ element, el
                         {currentFill === 'transparent' && <div className="absolute inset-0 border-t border-red-500 rotate-45 top-1/2 bg-white/0"></div>}
                     </div>
                 </div>
-                <span className="text-xs font-medium text-gray-700">Remplissage</span>
+                <span className="text-xs font-medium text-gray-700">{isIcon ? 'Color' : 'Remplissage'}</span>
             </button>
             
             {activePopover === 'fill' && (
@@ -192,6 +199,8 @@ const FloatingShapeToolbar: React.FC<FloatingShapeToolbarProps> = ({ element, el
             )}
        </div>
 
+       {!isIcon && (
+       <>
        <div className="w-px h-4 bg-gray-200 mx-1"></div>
 
        {/* Border Color Toggle */}
@@ -327,6 +336,8 @@ const FloatingShapeToolbar: React.FC<FloatingShapeToolbarProps> = ({ element, el
              </div>
           )}
        </div>
+       </>
+       )}
     </div>
   );
 };

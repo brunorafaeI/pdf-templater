@@ -6,7 +6,8 @@ export type ElementType =
   | 'box'
   | 'circle'
   | 'line'
-  | 'svg';
+  | 'svg'
+  | 'icon';
 
 export interface EditorElement {
   id: string;

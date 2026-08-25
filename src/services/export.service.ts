@@ -3,6 +3,7 @@ import html2canvas from 'html2canvas'
 import JSZip from 'jszip'
 import { cssToStyleString } from '@/utils/css'
 import { buildSvgMarkup } from '@/utils/svgExport'
+import { buildLucideIconMarkup } from '@/utils/lucideIconExport'
 
 export const generateGotenbergHTML = (state: TemplateState) => {
   const { pages, canvasSettings } = state
@@ -98,7 +99,7 @@ export const generateGotenbergHTML = (state: TemplateState) => {
 
       // SVG fill lives on <path>; keep wrapper transparent (like Canvas)
       const combinedStyle =
-        type === 'svg'
+        type === 'svg' || type === 'icon'
           ? {
               ...positionStyle,
               backgroundColor: 'transparent',
@@ -121,6 +122,8 @@ export const generateGotenbergHTML = (state: TemplateState) => {
         indexHtml += `        <div style="width: 100%; height: 100%; border-radius: ${style.borderRadius || '0'};"></div>\n`
       } else if (type === 'svg') {
         indexHtml += `        ${buildSvgMarkup(content, style as Record<string, unknown>, width)}\n`
+      } else if (type === 'icon') {
+        indexHtml += `        ${buildLucideIconMarkup(content, style as Record<string, unknown>, width, height)}\n`
       }
 
       indexHtml += `      </div>\n`
@@ -286,6 +289,10 @@ export const generateHTML = (pages: Page[], backgroundColor: string): string => 
           if (el.type === 'svg') {
             const wrapperStyle = `left: ${el.x}px; top: ${el.y}px; width: ${el.width}px; height: ${el.height}px; transform: rotate(${el.rotation || 0}deg); background-color: transparent; border: none; padding: 0;`
             return `<div class="element" style="${wrapperStyle}">${buildSvgMarkup(el.content, el.style as Record<string, unknown>, el.width)}</div>`
+          }
+          if (el.type === 'icon') {
+            const wrapperStyle = `left: ${el.x}px; top: ${el.y}px; width: ${el.width}px; height: ${el.height}px; transform: rotate(${el.rotation || 0}deg); background-color: transparent; border: none; padding: 0; color: ${el.style.color || '#334155'};`
+            return `<div class="element" style="${wrapperStyle}">${buildLucideIconMarkup(el.content, el.style as Record<string, unknown>, el.width, el.height)}</div>`
           }
           return `<div class="element" style="${commonStyle}; border-radius: ${el.style.borderRadius || '0'}"></div>`
         })

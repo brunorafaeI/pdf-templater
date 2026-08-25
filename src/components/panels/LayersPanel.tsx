@@ -1,6 +1,6 @@
 import React from 'react'
 import { EditorElement } from '@/types'
-import { LucideIconComponent } from '@/components/icon'
+import { LucideIconComponent, type LucideIconName } from '@/components/icon'
 
 interface LayersPanelProps {
   elements: EditorElement[]
@@ -70,6 +70,13 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
             <div className="text-gray-500">
               {el.type === 'text' && <LucideIconComponent icon="Type" size={14} />}
               {el.type === 'image' && <LucideIconComponent icon="Image" size={14} />}
+              {el.type === 'icon' && (
+                <LucideIconComponent
+                  icon={(el.content as LucideIconName) || 'Sparkles'}
+                  size={14}
+                />
+              )}
+              {el.type === 'svg' && <LucideIconComponent icon="Pentagon" size={14} />}
               {(el.type === 'box' || el.type === 'circle' || el.type === 'line') && (
                 <LucideIconComponent icon="Square" size={14} />
               )}
