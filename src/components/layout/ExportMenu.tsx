@@ -13,6 +13,8 @@ interface ExportMenuProps {
   onClose: () => void
   state: TemplateState
   onOpenGotenberg: () => void
+  /** Clears canvas selection so chrome is not captured in raster exports. */
+  onClearSelection?: () => void
 }
 
 export default function ExportMenu({
@@ -21,7 +23,17 @@ export default function ExportMenu({
   onClose,
   state,
   onOpenGotenberg,
+  onClearSelection,
 }: ExportMenuProps) {
+  const exportImage = async (format: 'jpeg' | 'png') => {
+    onClearSelection?.()
+    // Wait for React to unmount selection chrome
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+    )
+    await downloadImage('canvas-root', format)
+  }
+
   return (
     <div className="group relative">
       <button
@@ -48,7 +60,7 @@ export default function ExportMenu({
 
         <div className="p-2 space-y-1">
           <button
-            onClick={() => downloadImage('canvas-root', 'jpeg')}
+            onClick={() => exportImage('jpeg')}
             className="w-full text-left px-3 py-2.5 hover:bg-gray-50 rounded-md flex items-start gap-3 transition-colors group"
           >
             <div className="p-2 bg-gray-100 rounded group-hover:bg-white group-hover:shadow-sm transition-all text-gray-600">
@@ -63,7 +75,7 @@ export default function ExportMenu({
           </button>
 
           <button
-            onClick={() => downloadImage('canvas-root', 'png')}
+            onClick={() => exportImage('png')}
             className="w-full text-left px-3 py-2.5 hover:bg-gray-50 rounded-md flex items-start gap-3 transition-colors group"
           >
             <div className="p-2 bg-gray-100 rounded group-hover:bg-white group-hover:shadow-sm transition-all text-gray-600">

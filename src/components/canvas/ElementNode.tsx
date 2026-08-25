@@ -62,14 +62,15 @@ const ElementNode: React.FC<ElementNodeProps> = ({
             style={{ borderRadius: el.style.borderRadius }}
           />
         )}
-                {el.type === 'icon' && el.content && (
+        {el.type === 'icon' && el.content && (
           <div className="w-full h-full flex items-center justify-center pointer-events-none">
             <LucideIconComponent
               icon={el.content as LucideIconName}
               color={String(el.style.color || '#334155')}
               strokeWidth={Number(el.style.strokeWidth ?? 2)}
-              className="w-full h-full"
-              style={{ width: '100%', height: '100%' }}
+              width={el.width}
+              height={el.height}
+              style={{ width: '100%', height: '100%', display: 'block' }}
             />
           </div>
         )}
@@ -99,6 +100,8 @@ const ElementNode: React.FC<ElementNodeProps> = ({
         )}
       </div>
 
+      {/* Selection chrome — never captured in image export */}
+      <div className="editor-only controls" data-html2canvas-ignore="true">
       {el.isLocked && isSelected && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/5 border-2 border-red-400">
           <LucideIconComponent icon="Lock" className="text-red-500" size={24} />
@@ -252,6 +255,7 @@ const ElementNode: React.FC<ElementNodeProps> = ({
           />
         </>
       )}
+      </div>
     </div>
   )
 }

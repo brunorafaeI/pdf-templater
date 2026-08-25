@@ -19,6 +19,9 @@ const App = () => {
         isExportOpen={isExportOpen}
         setIsExportOpen={setIsExportOpen}
         onOpenGotenberg={gotenberg.openModal}
+        onClearSelection={() =>
+          setState((prev) => ({ ...prev, selectedId: null }))
+        }
       />
 
       <GotenbergModal

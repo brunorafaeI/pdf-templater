@@ -67,7 +67,10 @@ const Canvas: React.FC<CanvasProps> = ({
     x: number, y: number, w: number, h: number, r: number, 
     borderRadius: string,
     rotationHandlePos?: 'top' | 'bottom',
-    startAngle?: number
+    startAngle?: number,
+    fontSize?: string,
+    elementType?: EditorElement['type'],
+    style?: React.CSSProperties,
   } | null>(null);
   
   const currentRotationPosRef = useRef<'top' | 'bottom'>('bottom');
@@ -182,7 +185,10 @@ const Canvas: React.FC<CanvasProps> = ({
     setDragStart(mouse);
     setInitialElementState({ 
         x: el.x, y: el.y, w: el.width, h: el.height, r: el.rotation || 0,
-        borderRadius: el.style.borderRadius?.toString() || '0px'
+        borderRadius: el.style.borderRadius?.toString() || '0px',
+        fontSize: el.style.fontSize?.toString() || '16px',
+        elementType: el.type,
+        style: el.style,
     });
   };
 
@@ -365,7 +371,14 @@ const Canvas: React.FC<CanvasProps> = ({
       if (activeHandle.includes('s')) newH = Math.max(10, h + dy);
       if (activeHandle.includes('n')) { newH = Math.max(10, h - dy); newY = y + dy; }
 
-      onUpdate(selectedId, { x: newX, y: newY, width: newW, height: newH });
+      const updates: Partial<EditorElement> = { x: newX, y: newY, width: newW, height: newH };
+      if (initialElementState.elementType === 'text' && initialElementState.style) {
+        const baseFs = parseFloat(String(initialElementState.fontSize || '16')) || 16;
+        const scale = Math.sqrt((newW / Math.max(w, 1)) * (newH / Math.max(h, 1)));
+        const newFs = Math.max(4, Math.round(baseFs * scale * 10) / 10);
+        updates.style = { ...initialElementState.style, fontSize: `${newFs}px` };
+      }
+      onUpdate(selectedId, updates);
     } else if (mode === 'rotating' && initialElementState && initialElementState.startAngle !== undefined) {
       const cx = initialElementState.x + initialElementState.w / 2;
       const cy = initialElementState.y + initialElementState.h / 2;
@@ -628,7 +641,7 @@ const Canvas: React.FC<CanvasProps> = ({
             
             {/* Floating Shape Toolbar */}
             {selectedElement && !selectedElement.isLocked && (
-                <div className="floating-toolbar">
+                <div className="floating-toolbar editor-only controls" data-html2canvas-ignore="true">
                   <FloatingShapeToolbar 
                     element={selectedElement} 
                     elements={elements} 

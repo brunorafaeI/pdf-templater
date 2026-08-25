@@ -5,6 +5,10 @@ import { cssToStyleString } from '@/utils/css'
 import { buildSvgMarkup } from '@/utils/svgExport'
 import { buildLucideIconMarkup } from '@/utils/lucideIconExport'
 
+/** Same Google Fonts pack as the editor (index.html) — ensures export fidelity. */
+export const GOOGLE_FONTS_HREF =
+  'https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Anton&family=Caveat&family=Inter:wght@300;400;500;600;700&family=Lobster&family=Montserrat:wght@400;700;900&family=Oswald:wght@500&family=Pacifico&family=Playfair+Display:ital,wght@0,700;1,700&family=Roboto+Mono:wght@700&family=Sacramento&display=swap'
+
 export const generateGotenbergHTML = (state: TemplateState) => {
   const { pages, canvasSettings } = state
 
@@ -13,6 +17,9 @@ export const generateGotenbergHTML = (state: TemplateState) => {
 <head>
     <meta charset="UTF-8">
     <title>${state.name || 'Template'}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="${GOOGLE_FONTS_HREF}" rel="stylesheet">
     <style>
         body {
             margin: 0;
@@ -114,7 +121,23 @@ export const generateGotenbergHTML = (state: TemplateState) => {
       indexHtml += `      <div class="element-content">\n`
 
       if (type === 'text') {
-        indexHtml += `        <div style="width: 100%; height: 100%; overflow: hidden; word-wrap: break-word; white-space: pre-wrap;">${content}</div>\n`
+        const textStyle = cssToStyleString({
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
+          wordWrap: 'break-word',
+          whiteSpace: 'pre-wrap',
+          fontFamily: style.fontFamily,
+          fontSize: style.fontSize,
+          fontWeight: style.fontWeight,
+          fontStyle: style.fontStyle,
+          color: style.color,
+          letterSpacing: style.letterSpacing,
+          lineHeight: style.lineHeight,
+          textAlign: style.textAlign,
+          padding: style.padding,
+        } as Record<string, unknown>)
+        indexHtml += `        <div style="${textStyle}">${content}</div>\n`
       } else if (type === 'image') {
         const imgSrc = (content || '').replace(/"/g, '&quot;')
         indexHtml += `        <img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: ${style.borderRadius || '0'};" />\n`
@@ -312,6 +335,9 @@ export const generateHTML = (pages: Page[], backgroundColor: string): string => 
 <head>
   <meta charset="utf-8">
   <title>Exported Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="${GOOGLE_FONTS_HREF}" rel="stylesheet">
   <style>${styles}</style>
 </head>
 <body>
@@ -349,7 +375,7 @@ export const downloadImage = async (
     !!node.closest?.('.editor-only, .controls, [data-html2canvas-ignore]')
 
   const hideForExport = element.querySelectorAll(
-    '.controls, .editor-only, [data-html2canvas-ignore]'
+    '.controls, .editor-only, [data-html2canvas-ignore], .floating-toolbar'
   )
   const previousDisplay: string[] = []
   hideForExport.forEach((el: Element, i) => {

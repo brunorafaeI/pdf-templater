@@ -9,6 +9,7 @@ interface AppHeaderProps {
   isExportOpen: boolean
   setIsExportOpen: (open: boolean) => void
   onOpenGotenberg: () => void
+  onClearSelection?: () => void
 }
 
 export default function AppHeader({
@@ -17,6 +18,7 @@ export default function AppHeader({
   isExportOpen,
   setIsExportOpen,
   onOpenGotenberg,
+  onClearSelection,
 }: AppHeaderProps) {
   return (
     <header className="h-14 bg-slate-950 border-b border-slate-800 flex items-center justify-between px-4 z-[100] relative">
@@ -104,6 +106,7 @@ export default function AppHeader({
           onToggle={() => setIsExportOpen(!isExportOpen)}
           onClose={() => setIsExportOpen(false)}
           state={state}
+          onClearSelection={onClearSelection}
           onOpenGotenberg={() => {
             setIsExportOpen(false)
             onOpenGotenberg()
