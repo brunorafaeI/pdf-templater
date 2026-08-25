@@ -16,7 +16,7 @@ const Ruler: React.FC<RulerProps> = ({
   const isHorizontal = orientation === 'horizontal';
   const size = 24;
 
-  const ticks = [];
+  const ticks: React.ReactElement[] = [];
   for (let i = 0; i < length; i += 50) {
     if (i === 0) continue;
     ticks.push(

@@ -6,17 +6,7 @@ import {
   FooterSettings,
   HeaderSettings,
 } from '@/types';
-import {
-  Trash2,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  Bold,
-  Italic,
-  RotateCw,
-  Hash,
-  Layout,
-} from 'lucide-react';
+import { LucideIconComponent } from '@/components/icon';
 
 interface PropertiesPanelProps {
   element: EditorElement | null;
@@ -209,19 +199,19 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                       onClick={() => handleHeaderChange({ alignment: 'left' })}
                       className={`flex-1 p-2 border rounded-lg transition-all ${header.alignment === 'left' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'}`}
                     >
-                      <AlignLeft size={16} className="mx-auto" />
+                      <LucideIconComponent icon="AlignLeft" size={16} className="mx-auto" />
                     </button>
                     <button 
                       onClick={() => handleHeaderChange({ alignment: 'center' })}
                       className={`flex-1 p-2 border rounded-lg transition-all ${header.alignment === 'center' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'}`}
                     >
-                      <AlignCenter size={16} className="mx-auto" />
+                      <LucideIconComponent icon="AlignCenter" size={16} className="mx-auto" />
                     </button>
                     <button 
                       onClick={() => handleHeaderChange({ alignment: 'right' })}
                       className={`flex-1 p-2 border rounded-lg transition-all ${header.alignment === 'right' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'}`}
                     >
-                      <AlignRight size={16} className="mx-auto" />
+                      <LucideIconComponent icon="AlignRight" size={16} className="mx-auto" />
                     </button>
                   </div>
                 </div>
@@ -283,14 +273,14 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     onClick={() => handleFooterChange({ type: 'html' })}
                     className={`flex items-center justify-center gap-2 py-2 px-3 rounded border text-[10px] font-bold transition-all ${footer.type === 'html' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'}`}
                   >
-                    <Layout size={14} />
+                    <LucideIconComponent icon="Layout" size={14} />
                     HTML
                   </button>
                   <button 
                     onClick={() => handleFooterChange({ type: 'pagination' })}
                     className={`flex items-center justify-center gap-2 py-2 px-3 rounded border text-[10px] font-bold transition-all ${footer.type === 'pagination' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'}`}
                   >
-                    <Hash size={14} />
+                    <LucideIconComponent icon="Hash" size={14} />
                     PAGING
                   </button>
                 </div>
@@ -340,19 +330,19 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                       onClick={() => handleFooterChange({ alignment: 'left' })}
                       className={`flex-1 py-1.5 flex justify-center rounded transition-all ${footer.alignment === 'left' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                     >
-                      <AlignLeft size={16} />
+                      <LucideIconComponent icon="AlignLeft" size={16} />
                     </button>
                     <button 
                       onClick={() => handleFooterChange({ alignment: 'center' })}
                       className={`flex-1 py-1.5 flex justify-center rounded transition-all ${footer.alignment === 'center' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                     >
-                      <AlignCenter size={16} />
+                      <LucideIconComponent icon="AlignCenter" size={16} />
                     </button>
                     <button 
                       onClick={() => handleFooterChange({ alignment: 'right' })}
                       className={`flex-1 py-1.5 flex justify-center rounded transition-all ${footer.alignment === 'right' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                     >
-                      <AlignRight size={16} />
+                      <LucideIconComponent icon="AlignRight" size={16} />
                     </button>
                   </div>
                 </div>
@@ -383,7 +373,7 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           className="text-red-500 hover:bg-red-50 p-2 rounded-md transition-colors"
           title="Delete Element"
         >
-          <Trash2 size={18} />
+          <LucideIconComponent icon="Trash2" size={18} />
         </button>
       </div>
 
@@ -429,7 +419,7 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               />
             </div>
             <div className="col-span-2">
-               <label className="block text-xs text-gray-500 mb-1 flex items-center gap-1"><RotateCw size={10} /> Rotation (deg)</label>
+               <label className="block text-xs text-gray-500 mb-1 flex items-center gap-1"><LucideIconComponent icon="RotateCw" size={10} /> Rotation (deg)</label>
                <input 
                 type="number" 
                 value={Math.round(element.rotation || 0)}
@@ -484,31 +474,31 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 onClick={() => handleStyleChange('fontWeight', element.style.fontWeight === 'bold' ? 'normal' : 'bold')}
                 className={`p-2 rounded border ${element.style.fontWeight === 'bold' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'border-gray-200 text-gray-600'}`}
               >
-                <Bold size={16} />
+                <LucideIconComponent icon="Bold" size={16} />
               </button>
               <button 
                 onClick={() => handleStyleChange('fontStyle', element.style.fontStyle === 'italic' ? 'normal' : 'italic')}
                 className={`p-2 rounded border ${element.style.fontStyle === 'italic' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'border-gray-200 text-gray-600'}`}
               >
-                <Italic size={16} />
+                <LucideIconComponent icon="Italic" size={16} />
               </button>
                <button 
                 onClick={() => handleStyleChange('textAlign', 'left')}
                 className={`p-2 rounded border ${element.style.textAlign === 'left' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'border-gray-200 text-gray-600'}`}
               >
-                <AlignLeft size={16} />
+                <LucideIconComponent icon="AlignLeft" size={16} />
               </button>
                <button 
                 onClick={() => handleStyleChange('textAlign', 'center')}
                 className={`p-2 rounded border ${element.style.textAlign === 'center' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'border-gray-200 text-gray-600'}`}
               >
-                <AlignCenter size={16} />
+                <LucideIconComponent icon="AlignCenter" size={16} />
               </button>
                <button 
                 onClick={() => handleStyleChange('textAlign', 'right')}
                 className={`p-2 rounded border ${element.style.textAlign === 'right' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'border-gray-200 text-gray-600'}`}
               >
-                <AlignRight size={16} />
+                <LucideIconComponent icon="AlignRight" size={16} />
               </button>
             </div>
           </section>

@@ -1,15 +1,15 @@
-import React from 'react';
-import { Page } from '@/types';
-import { FilePlus, Trash2, Copy, FileText, Check } from 'lucide-react';
+import React from 'react'
+import { Page } from '@/types'
+import { LucideIconComponent } from '@/components/icon'
 
 interface PagesPanelProps {
-  pages: Page[];
-  activePageId: string;
-  onSelectPage: (id: string) => void;
-  onAddPage: () => void;
-  onDeletePage: (id: string) => void;
-  onDuplicatePage: (id: string) => void;
-  onRenamePage: (id: string, newName: string) => void;
+  pages: Page[]
+  activePageId: string
+  onSelectPage: (id: string) => void
+  onAddPage: () => void
+  onDeletePage: (id: string) => void
+  onDuplicatePage: (id: string) => void
+  onRenamePage: (id: string, newName: string) => void
 }
 
 const PagesPanel: React.FC<PagesPanelProps> = ({
@@ -29,7 +29,7 @@ const PagesPanel: React.FC<PagesPanelProps> = ({
           onClick={onAddPage}
           className="p-1 hover:bg-blue-50 text-blue-600 rounded flex items-center gap-1 text-xs font-medium"
         >
-          <FilePlus size={14} /> Add Page
+          <LucideIconComponent icon="FilePlus" size={14} /> Add Page
         </button>
       </div>
 
@@ -60,7 +60,8 @@ const PagesPanel: React.FC<PagesPanelProps> = ({
 
             <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
               <div className="flex items-center gap-2 font-medium text-xs text-gray-700">
-                <FileText
+                <LucideIconComponent
+                  icon="FileText"
                   size={12}
                   className={
                     activePageId === page.id ? 'text-blue-600' : 'text-gray-400'
@@ -81,29 +82,33 @@ const PagesPanel: React.FC<PagesPanelProps> = ({
 
             <div className="flex flex-col gap-1">
               {activePageId === page.id && (
-                <Check size={12} className="text-blue-600 self-end" />
+                <LucideIconComponent
+                  icon="Check"
+                  size={12}
+                  className="text-blue-600 self-end"
+                />
               )}
               <div className="flex gap-1">
                 <button
                   onClick={(e) => {
-                    e.stopPropagation();
-                    onDuplicatePage(page.id);
+                    e.stopPropagation()
+                    onDuplicatePage(page.id)
                   }}
                   className="p-1 hover:bg-white rounded text-gray-500 hover:text-blue-600"
                   title="Duplicate"
                 >
-                  <Copy size={10} />
+                  <LucideIconComponent icon="Copy" size={10} />
                 </button>
                 {pages.length > 1 && (
                   <button
                     onClick={(e) => {
-                      e.stopPropagation();
-                      onDeletePage(page.id);
+                      e.stopPropagation()
+                      onDeletePage(page.id)
                     }}
                     className="p-1 hover:bg-white rounded text-gray-500 hover:text-red-600"
                     title="Delete"
                   >
-                    <Trash2 size={10} />
+                    <LucideIconComponent icon="Trash2" size={10} />
                   </button>
                 )}
               </div>
@@ -112,7 +117,7 @@ const PagesPanel: React.FC<PagesPanelProps> = ({
         ))}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default PagesPanel;
+export default PagesPanel

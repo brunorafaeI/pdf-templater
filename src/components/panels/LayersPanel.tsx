@@ -1,26 +1,15 @@
-import React from 'react';
-import { EditorElement } from '@/types';
-import {
-  Eye,
-  EyeOff,
-  Lock,
-  Unlock,
-  Type,
-  Image as ImageIcon,
-  Square,
-  Trash2,
-  MoreHorizontal,
-  Copy,
-} from 'lucide-react';
+import React from 'react'
+import { EditorElement } from '@/types'
+import { LucideIconComponent } from '@/components/icon'
 
 interface LayersPanelProps {
-  elements: EditorElement[];
-  selectedId: string | null;
-  onSelect: (id: string | null) => void;
-  onUpdate: (id: string, updates: Partial<EditorElement>) => void;
-  onDelete: (id: string) => void;
-  onDuplicate: (id: string) => void;
-  onReorder: (dragIndex: number, hoverIndex: number) => void;
+  elements: EditorElement[]
+  selectedId: string | null
+  onSelect: (id: string | null) => void
+  onUpdate: (id: string, updates: Partial<EditorElement>) => void
+  onDelete: (id: string) => void
+  onDuplicate: (id: string) => void
+  onReorder: (dragIndex: number, hoverIndex: number) => void
 }
 
 const LayersPanel: React.FC<LayersPanelProps> = ({
@@ -32,25 +21,25 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
   onDuplicate,
   onReorder,
 }) => {
-  const reversedElements = [...elements].reverse();
+  const reversedElements = [...elements].reverse()
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
-    e.dataTransfer.setData('index', index.toString());
-  };
+    e.dataTransfer.setData('index', index.toString())
+  }
 
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
+    e.preventDefault()
+  }
 
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
-    const dragIndex = parseInt(e.dataTransfer.getData('index'));
-    const actualDragIndex = elements.length - 1 - dragIndex;
-    const actualDropIndex = elements.length - 1 - dropIndex;
+    const dragIndex = parseInt(e.dataTransfer.getData('index'))
+    const actualDragIndex = elements.length - 1 - dragIndex
+    const actualDropIndex = elements.length - 1 - dropIndex
 
     if (actualDragIndex !== actualDropIndex) {
-      onReorder(actualDragIndex, actualDropIndex);
+      onReorder(actualDragIndex, actualDropIndex)
     }
-  };
+  }
 
   return (
     <div className="flex flex-col h-full bg-white">
@@ -79,11 +68,11 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
             `}
           >
             <div className="text-gray-500">
-              {el.type === 'text' && <Type size={14} />}
-              {el.type === 'image' && <ImageIcon size={14} />}
-              {(el.type === 'box' ||
-                el.type === 'circle' ||
-                el.type === 'line') && <Square size={14} />}
+              {el.type === 'text' && <LucideIconComponent icon="Type" size={14} />}
+              {el.type === 'image' && <LucideIconComponent icon="Image" size={14} />}
+              {(el.type === 'box' || el.type === 'circle' || el.type === 'line') && (
+                <LucideIconComponent icon="Square" size={14} />
+              )}
             </div>
 
             <div className="flex-1 min-w-0">
@@ -95,62 +84,62 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={(e) => {
-                  e.stopPropagation();
-                  onUpdate(el.id, { isLocked: !el.isLocked });
+                  e.stopPropagation()
+                  onUpdate(el.id, { isLocked: !el.isLocked })
                 }}
                 className={`p-1 hover:bg-gray-200 rounded ${el.isLocked ? 'text-red-500 opacity-100' : 'text-gray-400'}`}
               >
                 {el.isLocked ? (
-                  <Lock size={12} />
+                  <LucideIconComponent icon="Lock" size={12} />
                 ) : (
-                  <Unlock size={12} />
+                  <LucideIconComponent icon="Unlock" size={12} />
                 )}
               </button>
 
               <button
                 onClick={(e) => {
-                  e.stopPropagation();
-                  onUpdate(el.id, { isVisible: !el.isVisible });
+                  e.stopPropagation()
+                  onUpdate(el.id, { isVisible: !el.isVisible })
                 }}
                 className={`p-1 hover:bg-gray-200 rounded ${!el.isVisible ? 'text-gray-400' : 'text-gray-600'}`}
               >
                 {el.isVisible ? (
-                  <Eye size={12} />
+                  <LucideIconComponent icon="Eye" size={12} />
                 ) : (
-                  <EyeOff size={12} />
+                  <LucideIconComponent icon="EyeOff" size={12} />
                 )}
               </button>
 
               <div className="relative group/menu">
                 <button className="p-1 hover:bg-gray-200 rounded text-gray-500">
-                  <MoreHorizontal size={12} />
+                  <LucideIconComponent icon="MoreHorizontal" size={12} />
                 </button>
                 <div className="absolute right-0 top-full hidden group-hover/menu:block bg-white shadow-xl border border-gray-200 rounded-md z-50 w-32 py-1">
                   <button
                     onClick={() => onDuplicate(el.id)}
                     className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 flex items-center gap-2"
                   >
-                    <Copy size={12} /> Duplicate
+                    <LucideIconComponent icon="Copy" size={12} /> Duplicate
                   </button>
                   <button
                     onClick={() => onDelete(el.id)}
                     className="w-full text-left px-3 py-2 text-xs hover:bg-red-50 text-red-600 flex items-center gap-2"
                   >
-                    <Trash2 size={12} /> Delete
+                    <LucideIconComponent icon="Trash2" size={12} /> Delete
                   </button>
                 </div>
               </div>
             </div>
             {el.isLocked && (
               <div className="text-red-400 opacity-100 group-hover:hidden">
-                <Lock size={10} />
+                <LucideIconComponent icon="Lock" size={10} />
               </div>
             )}
           </div>
         ))}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default LayersPanel;
+export default LayersPanel

@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { EditorElement, A4_WIDTH, A4_HEIGHT, Page, FooterSettings } from '@/types';
 import Ruler from './Ruler';
-import { RotateCw, Lock } from 'lucide-react';
 import FloatingShapeToolbar from './FloatingShapeToolbar';
+import ElementNode, { type ResizeHandle, type RadiusHandle } from './ElementNode';
 
 interface CanvasProps {
   pages: Page[];
@@ -20,8 +20,6 @@ interface CanvasProps {
 }
 
 type InteractionMode = 'idle' | 'dragging_element' | 'resizing' | 'rotating' | 'dragging_guide' | 'dragging_radius';
-type ResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
-type RadiusHandle = 'tl' | 'tr' | 'bl' | 'br';
 
 interface ActiveGuideState {
   type: 'horizontal' | 'vertical';
@@ -511,7 +509,6 @@ const Canvas: React.FC<CanvasProps> = ({
                     className="editor-only absolute top-0 bottom-0 z-40 w-4 -ml-2 flex justify-center group cursor-col-resize hover:bg-cyan-500/10" 
                     style={{ left: g, display: activeGuide?.index === i && activeGuide?.type === 'vertical' ? 'none' : 'flex' }}
                     onMouseDown={(e) => handleGuideMouseDown(e, 'vertical', i, g)}
-                    data-html2canvas-ignore="true"
                 >
                     <div className="h-full w-px bg-cyan-500"></div>
                 </div>
@@ -522,7 +519,6 @@ const Canvas: React.FC<CanvasProps> = ({
                     className="editor-only absolute left-0 right-0 z-40 h-4 -mt-2 flex flex-col justify-center group cursor-row-resize hover:bg-cyan-500/10" 
                     style={{ top: g, display: activeGuide?.index === i && activeGuide?.type === 'horizontal' ? 'none' : 'flex' }}
                     onMouseDown={(e) => handleGuideMouseDown(e, 'horizontal', i, g)}
-                    data-html2canvas-ignore="true"
                 >
                     <div className="w-full h-px bg-cyan-500"></div>
                 </div>
@@ -535,7 +531,6 @@ const Canvas: React.FC<CanvasProps> = ({
                     left: activeGuide.type === 'vertical' ? activeGuide.pos : 0, 
                     top: activeGuide.type === 'horizontal' ? activeGuide.pos : 0 
                     }}
-                    data-html2canvas-ignore="true"
                 />
                 )}
             </>
@@ -552,12 +547,11 @@ const Canvas: React.FC<CanvasProps> = ({
                       width: line.orientation === 'vertical' ? '1px' : '100%',
                       height: line.orientation === 'horizontal' ? '1px' : '100%',
                   }}
-                  data-html2canvas-ignore="true"
                />
             ))}
 
             {/* Margins Reference Lines — editor-only (never exported) */}
-            <div className="editor-only absolute inset-0 pointer-events-none z-[4]" aria-hidden="true" data-html2canvas-ignore="true">
+            <div className="editor-only absolute inset-0 pointer-events-none z-[4]" aria-hidden="true">
                 {/* Top Margin */}
                 <div 
                     className="absolute left-0 right-0 border-t border-dashed border-blue-200" 
@@ -616,176 +610,25 @@ const Canvas: React.FC<CanvasProps> = ({
             const isSelected = selectedId === el.id;
             
             return (
-                <div
-                key={el.id}
-                className={`absolute element-node group ${isSelected ? 'z-20' : 'z-10'}`}
-                style={{
-                    left: el.x,
-                    top: el.y,
-                    width: el.width,
-                    height: el.height,
-                    transform: `rotate(${el.rotation || 0}deg)`,
-                    cursor: el.isLocked ? 'default' : 'move'
-                }}
-                onMouseDown={(e) => handleElementMouseDown(e, el.id)}
-                >
-                <div className="w-full h-full relative" style={el.type === 'svg' ? {} : el.style}>
-                    {el.type === 'text' && <div className="w-full h-full overflow-hidden break-words pointer-events-none whitespace-pre-wrap">{el.content}</div>}
-                    {el.type === 'image' && <img src={el.content} className="w-full h-full object-cover pointer-events-none" style={{ borderRadius: el.style.borderRadius }} />}
-                    {(el.type === 'box' || el.type === 'circle' || el.type === 'line') && (
-                        <div className="w-full h-full pointer-events-none" style={{ borderRadius: el.style.borderRadius }}></div>
-                    )}
-                    {el.type === 'svg' && (
-                        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full pointer-events-none overflow-visible">
-                            <path 
-                                d={el.content} 
-                                fill={el.style.backgroundColor || 'transparent'} 
-                                stroke={el.style.borderColor || 'transparent'}
-                                strokeWidth={parseInt(el.style.borderWidth?.toString() || '0') * (100 / el.width)} 
-                                strokeDasharray={el.style.borderStyle === 'dashed' ? '5,5' : el.style.borderStyle === 'dotted' ? '2,2' : undefined}
-                                vectorEffect="non-scaling-stroke"
-                            />
-                        </svg>
-                    )}
-                </div>
-
-                {el.isLocked && isSelected && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/5 border-2 border-red-400">
-                        <Lock className="text-red-500" size={24} />
-                    </div>
-                )}
-
-                {isSelected && !el.isLocked && (
-                    <div className="editor-only controls" data-html2canvas-ignore="true">
-                    <div className="absolute inset-0 border-2 border-blue-500 pointer-events-none"></div>
-                    
-                    {/* Radius Handles - Box/Image Only */}
-                    {(el.type === 'box' || el.type === 'image') && (
-                        (() => {
-                           const currentR = parseInt(el.style.borderRadius?.toString() || '0');
-                           // Dynamic Max Radius (Half of shortest side)
-                           const maxR = Math.min(el.width, el.height) / 2;
-                           
-                           // Visual offset logic: Start at 12px (so handle is inside corner) and move to maxR (center)
-                           // The 'Math.max(12, currentR)' ensures handles are visible/clickable even at radius 0.
-                           // The 'Math.min(..., maxR)' ensures visual collision at the center.
-                           const visualOffset = Math.min(Math.max(12, currentR), maxR); 
-                           
-                           // Handle styling
-                           const handleStyle = "absolute w-2 h-2 bg-white border border-blue-500 rounded-full cursor-grab z-40 hover:scale-125 transition-transform flex items-center justify-center";
-                          
-
-                           return (
-                             <>
-                                {/* Top Left */}
-                                <div className={handleStyle}
-                                    style={{ top: `${visualOffset}px`, left: `${visualOffset}px`, transform: 'translate(-50%, -50%)' }}
-                                    onMouseDown={(e) => handleRadiusMouseDown(e, 'tl')}
-                                >
-                                </div>
-                                
-                                {/* Top Right */}
-                                <div className={handleStyle}
-                                    style={{ top: `${visualOffset}px`, right: `${visualOffset}px`, transform: 'translate(50%, -50%)' }}
-                                    onMouseDown={(e) => handleRadiusMouseDown(e, 'tr')}
-                                >
-                                </div>
-                                
-                                {/* Bottom Left */}
-                                <div className={handleStyle}
-                                    style={{ bottom: `${visualOffset}px`, left: `${visualOffset}px`, transform: 'translate(-50%, 50%)' }}
-                                    onMouseDown={(e) => handleRadiusMouseDown(e, 'bl')}
-                                >
-                                </div>
-                                
-                                {/* Bottom Right */}
-                                <div className={handleStyle}
-                                    style={{ bottom: `${visualOffset}px`, right: `${visualOffset}px`, transform: 'translate(50%, 50%)' }}
-                                    onMouseDown={(e) => handleRadiusMouseDown(e, 'br')}
-                                >
-                                </div>
-
-                                {/* Radius Tooltip */}
-                                {mode === 'dragging_radius' && (
-                                    <div className="absolute top-[30%] left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-500 text-white text-xs px-2 py-1 rounded shadow-lg pointer-events-none whitespace-nowrap z-50 font-medium">
-                                        Radius {currentR}
-                                    </div>
-                                )}
-                             </>
-                           );
-                        })()
-                    )}
-
-                    {/* Rotation Handle */}
-                    {(() => {
-                        // Collision avoidance for rotation handle
-                        let rotationPos: 'top' | 'bottom' = 'bottom';
-                        
-                        // If we are currently rotating, use the position from when rotation started
-                        if (mode === 'rotating' && initialElementState?.rotationHandlePos) {
-                            rotationPos = initialElementState.rotationHandlePos;
-                        } else if (toolbarRect) {
-                            const handleSize = 24;
-                            const handleMargin = 8;
-                            
-                            // Bottom handle bounds
-                            const bHandle = {
-                                left: el.x + el.width / 2 - handleSize / 2,
-                                right: el.x + el.width / 2 + handleSize / 2,
-                                top: el.y + el.height + handleMargin,
-                                bottom: el.y + el.height + handleMargin + handleSize
-                            };
-                            
-                            const collidesWithBottom = (
-                                toolbarRect.left < bHandle.right &&
-                                toolbarRect.left + toolbarRect.width > bHandle.left &&
-                                toolbarRect.top < bHandle.bottom &&
-                                toolbarRect.top + toolbarRect.height > bHandle.top
-                            );
-                            
-                            if (collidesWithBottom) {
-                                rotationPos = 'top';
-                            }
-                        }
-
-                        // Update ref for the next interaction start
-                        currentRotationPosRef.current = rotationPos;
-
-                        const isTop = rotationPos === 'top';
-                        const handleClass = isTop ? "-top-6" : "-bottom-6";
-
-                        return (
-                            <>
-                                <div 
-                                    className={`absolute ${handleClass} left-1/2 -translate-x-1/2 p-0.5 bg-white border border-gray-300 rounded-full flex items-center justify-center cursor-move hover:bg-blue-50 z-[60] shadow-sm`}
-                                    onMouseDown={handleRotateMouseDown}
-                                >
-                                    <RotateCw size={12} className="text-zinc-700" />
-                                </div>
-                            </>
-                        );
-                    })()}
-
-                    {/* Corner resize handles - circular */}
-                    <div className="absolute -top-1 -left-1 w-2.5 h-2.5 bg-white border border-blue-500 rounded-full cursor-nw-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'nw')} />
-                    <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-white border border-blue-500 rounded-full cursor-ne-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'ne')} />
-                    <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-white border border-blue-500 rounded-full cursor-se-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'se')} />
-                    <div className="absolute -bottom-1 -left-1 w-2.5 h-2.5 bg-white border border-blue-500 rounded-full cursor-sw-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'sw')} />
-
-                    {/* Side resize handles - small rounded rectangles */}
-                    <div className="absolute -top-0.5 left-1/2 -translate-x-1.5 w-4 h-1.5 bg-white border border-blue-500 rounded-md cursor-n-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'n')} />
-                    <div className="absolute top-1/2 -translate-y-1/2 -right-0.5 w-1.5 h-4 bg-white border border-blue-500 rounded-md cursor-e-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'e')} />
-                    <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-4 h-1.5 bg-white border border-blue-500 rounded-md cursor-s-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 's')} />
-                    <div className="absolute top-1/2 -translate-y-1/2 -left-0.5 w-1.5 h-4 bg-white border border-blue-500 rounded-md cursor-w-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'w')} />
-                    </div>
-                )}
-                </div>
+                <ElementNode
+                  key={el.id}
+                  el={el}
+                  isSelected={isSelected}
+                  mode={mode}
+                  toolbarRect={toolbarRect}
+                  rotationHandlePos={initialElementState?.rotationHandlePos}
+                  currentRotationPosRef={currentRotationPosRef}
+                  onElementMouseDown={handleElementMouseDown}
+                  onResizeMouseDown={handleResizeMouseDown}
+                  onRotateMouseDown={handleRotateMouseDown}
+                  onRadiusMouseDown={handleRadiusMouseDown}
+                />
             );
             })}
             
             {/* Floating Shape Toolbar */}
             {selectedElement && !selectedElement.isLocked && (
-                <div className="floating-toolbar editor-only" data-html2canvas-ignore="true">
+                <div className="floating-toolbar">
                   <FloatingShapeToolbar 
                     element={selectedElement} 
                     elements={elements} 
