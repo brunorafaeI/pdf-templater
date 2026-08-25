@@ -124,7 +124,7 @@ export const generateGotenbergHTML = (state: TemplateState) => {
         const textStyle = cssToStyleString({
           width: '100%',
           height: '100%',
-          overflow: 'hidden',
+          overflow: 'visible',
           wordWrap: 'break-word',
           whiteSpace: 'pre-wrap',
           fontFamily: style.fontFamily,
@@ -133,7 +133,7 @@ export const generateGotenbergHTML = (state: TemplateState) => {
           fontStyle: style.fontStyle,
           color: style.color,
           letterSpacing: style.letterSpacing,
-          lineHeight: style.lineHeight,
+          lineHeight: style.lineHeight ?? 1.3,
           textAlign: style.textAlign,
           padding: style.padding,
         } as Record<string, unknown>)

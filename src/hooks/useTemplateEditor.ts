@@ -6,7 +6,7 @@ import {
   getDefaultElementSize,
   getDefaultElementStyles,
 } from '@/utils/elementDefaults'
-import { measureTextBox } from '@/utils/measureText'
+import { measureTextBox, getTextPaddingForFontSize } from '@/utils/measureText'
 
 export type RightTab = 'properties' | 'layers' | 'pages'
 
@@ -52,7 +52,14 @@ export function useTemplateEditor() {
       const { content: _c, ...styleOnly } = extraStyle as CSSProperties & {
         content?: string
       }
-      const resolvedStyles = getDefaultElementStyles(type, styleOnly)
+      let resolvedStyles = getDefaultElementStyles(type, styleOnly)
+      if (type === 'text') {
+        resolvedStyles = {
+          ...resolvedStyles,
+          padding: getTextPaddingForFontSize(resolvedStyles.fontSize),
+          lineHeight: resolvedStyles.lineHeight ?? 1.3,
+        }
+      }
 
       let { width, height } = getDefaultElementSize(type, size)
       if (type === 'text' && !size) {

@@ -45,7 +45,7 @@ const ElementNode: React.FC<ElementNodeProps> = ({
     >
       <div className="w-full h-full relative" style={el.type === 'svg' || el.type === 'icon' ? {} : el.style}>
         {el.type === 'text' && (
-          <div className="w-full h-full overflow-hidden break-words pointer-events-none whitespace-pre-wrap">
+          <div className="w-full h-full overflow-visible break-words pointer-events-none whitespace-pre-wrap leading-[1.3]">
             {el.content}
           </div>
         )}
