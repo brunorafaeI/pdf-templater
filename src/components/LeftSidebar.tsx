@@ -48,11 +48,11 @@ const SHAPES_LIB = [
   },
   {
     type: 'svg',
-    path: 'M50 88.9 L16.7 55.6 C7.2 46.1 7.2 30.9 16.7 21.4 S41.4 21.4 50.9 30.9 L50 31.8 L49.1 30.9 C58.6 21.4 73.8 21.4 83.3 21.4 S92.8 46.1 83.3 55.6 L50 88.9 Z',
+    path: 'M50 92 C20 70 8 50 8 32 C8 18 18 8 32 8 C40 8 46 12 50 20 C54 12 60 8 68 8 C82 8 92 18 92 32 C92 50 80 70 50 92 Z',
     icon: <Heart className="text-gray-300 fill-current w-8 h-8" />,
     label: 'Heart (Filled)',
     isOutlined: false,
-    defaultSize: { width: 140, height: 150 },
+    defaultSize: { width: 150, height: 150 },
   },
   {
     type: 'svg',
@@ -83,11 +83,11 @@ const SHAPES_LIB = [
   },
   {
     type: 'svg',
-    path: 'M50 88.9 L16.7 55.6 C7.2 46.1 7.2 30.9 16.7 21.4 S41.4 21.4 50.9 30.9 L50 31.8 L49.1 30.9 C58.6 21.4 73.8 21.4 83.3 21.4 S92.8 46.1 83.3 55.6 L50 88.9 Z',
+    path: 'M50 92 C20 70 8 50 8 32 C8 18 18 8 32 8 C40 8 46 12 50 20 C54 12 60 8 68 8 C82 8 92 18 92 32 C92 50 80 70 50 92 Z',
     icon: <Heart className="text-gray-300 stroke-current stroke-2 fill-none w-8 h-8" />,
     label: 'Heart (Outlined)',
     isOutlined: true,
-    defaultSize: { width: 140, height: 150 },
+    defaultSize: { width: 150, height: 150 },
   },
   {
     type: 'svg',
