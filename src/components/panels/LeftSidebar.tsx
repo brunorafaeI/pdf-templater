@@ -162,9 +162,10 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ onAddElement }) => {
                   {FUN_TEXTS.map((style, i) => (
                     <button
                       key={i}
-                      onClick={() =>
-                        onAddElement('text', style.content, { ...style })
-                      }
+                      onClick={() => {
+                        const { content: text, ...textStyle } = style
+                        onAddElement('text', text, { ...textStyle })
+                      }}
                       className="h-20 bg-slate-900/50 hover:bg-slate-900 rounded flex items-center justify-center p-2 text-center break-words transition-colors border border-slate-700 hover:border-slate-600"
                       style={{
                         color: style.color,

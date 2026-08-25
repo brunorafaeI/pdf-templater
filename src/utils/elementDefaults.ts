@@ -30,6 +30,6 @@ export const getDefaultElementStyles = (
   backgroundColor: type === 'box' ? '#3b82f6' : 'transparent',
   color: type === 'icon' ? '#334155' : '#000000',
   fontSize: '16px',
-  padding: type === 'text' ? '8px' : '0px',
+  padding: type === 'text' ? '2px' : '0px',
   ...extraStyle,
 })

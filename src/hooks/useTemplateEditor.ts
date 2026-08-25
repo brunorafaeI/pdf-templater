@@ -6,6 +6,7 @@ import {
   getDefaultElementSize,
   getDefaultElementStyles,
 } from '@/utils/elementDefaults'
+import { measureTextBox } from '@/utils/measureText'
 
 export type RightTab = 'properties' | 'layers' | 'pages'
 
@@ -47,8 +48,21 @@ export function useTemplateEditor() {
       size?: { width: number; height: number }
     ) => {
       const id = Date.now().toString()
-      const { width, height } = getDefaultElementSize(type, size)
-      const defaultStyles = getDefaultElementStyles(type, extraStyle)
+      // Strip non-CSS keys that FUN_TEXTS may spread (e.g. content)
+      const { content: _c, ...styleOnly } = extraStyle as CSSProperties & {
+        content?: string
+      }
+      const resolvedStyles = getDefaultElementStyles(type, styleOnly)
+
+      let { width, height } = getDefaultElementSize(type, size)
+      if (type === 'text' && !size) {
+        const measured = measureTextBox(
+          content || 'Double click to edit...',
+          resolvedStyles
+        )
+        width = measured.width
+        height = measured.height
+      }
 
       setState((prev) => {
         const idx = prev.pages.findIndex((p) => p.id === prev.activePageId)
@@ -68,7 +82,7 @@ export function useTemplateEditor() {
           height,
           rotation: 0,
           content: content || (type === 'text' ? 'Double click to edit...' : ''),
-          style: defaultStyles,
+          style: resolvedStyles,
           isVisible: true,
           isLocked: false,
         }
