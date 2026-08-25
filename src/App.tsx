@@ -105,13 +105,18 @@ const App: React.FC = () => {
     setState(prev => ({ ...prev, pages: newPages }));
   };
 
-  const addElement = (type: ElementType, content?: string, extraStyle: any = {}) => {
+  const addElement = (
+    type: ElementType,
+    content?: string,
+    extraStyle: React.CSSProperties = {},
+    size?: { width: number; height: number }
+  ) => {
     const id = Date.now().toString();
     const defaultStyles: React.CSSProperties = {
       backgroundColor: type === 'box' ? '#3b82f6' : 'transparent',
       color: '#000000',
       fontSize: '16px',
-      padding: '8px',
+      padding: type === 'text' ? '8px' : '0px',
       ...extraStyle
     };
 
@@ -123,6 +128,10 @@ const App: React.FC = () => {
     if (type === 'box') { width = 150; height = 150; }
     if (type === 'circle') { width = 150; height = 150; }
     if (type === 'line') { width = 200; height = 2; }
+    if (type === 'svg') { width = 200; height = 150; }
+
+    if (size?.width) width = size.width;
+    if (size?.height) height = size.height;
 
     const newElement: EditorElement = {
       id,
@@ -304,7 +313,12 @@ const App: React.FC = () => {
                   </div>
                   
                   <div className="p-2 space-y-1">
-                    <button onClick={() => downloadImage('canvas-root', 'jpeg')} className="w-full text-left px-3 py-2.5 hover:bg-gray-50 rounded-md flex items-start gap-3 transition-colors group">
+                    <button onClick={async () => {
+                      setState(prev => ({ ...prev, selectedId: null }))
+                      setIsExportOpen(false)
+                      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))
+                      await downloadImage('canvas-root', 'jpeg')
+                    }} className="w-full text-left px-3 py-2.5 hover:bg-gray-50 rounded-md flex items-start gap-3 transition-colors group">
                        <div className="p-2 bg-gray-100 rounded group-hover:bg-white group-hover:shadow-sm transition-all text-gray-600">
                          <FileImage size={18} />
                        </div>
@@ -314,7 +328,12 @@ const App: React.FC = () => {
                        </div>
                     </button>
 
-                    <button onClick={() => downloadImage('canvas-root', 'png')} className="w-full text-left px-3 py-2.5 hover:bg-gray-50 rounded-md flex items-start gap-3 transition-colors group">
+                    <button onClick={async () => {
+                      setState(prev => ({ ...prev, selectedId: null }))
+                      setIsExportOpen(false)
+                      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))
+                      await downloadImage('canvas-root', 'png')
+                    }} className="w-full text-left px-3 py-2.5 hover:bg-gray-50 rounded-md flex items-start gap-3 transition-colors group">
                        <div className="p-2 bg-gray-100 rounded group-hover:bg-white group-hover:shadow-sm transition-all text-gray-600">
                          <FileType size={18} />
                        </div>

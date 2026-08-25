@@ -333,14 +333,31 @@ export const downloadImage = async (
   const element = document.getElementById(elementId)
   if (!element) return
 
-  const controls = element.querySelectorAll('.controls')
-  controls.forEach((el: Element) => ((el as HTMLElement).style.display = 'none'))
+  const shouldIgnore = (node: Element) =>
+    node.classList?.contains('editor-only') ||
+    node.classList?.contains('controls') ||
+    node.hasAttribute('data-html2canvas-ignore') ||
+    !!node.closest?.('.editor-only, .controls, [data-html2canvas-ignore]')
+
+  const hideForExport = element.querySelectorAll(
+    '.controls, .editor-only, [data-html2canvas-ignore]'
+  )
+  const previousDisplay: string[] = []
+  hideForExport.forEach((el: Element, i) => {
+    const htmlEl = el as HTMLElement
+    previousDisplay[i] = htmlEl.style.display
+    htmlEl.style.display = 'none'
+  })
+
+  // Allow the browser to apply display:none before capture
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
 
   try {
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
       backgroundColor: null,
+      ignoreElements: (el) => shouldIgnore(el),
     })
 
     const link = document.createElement('a')
@@ -352,7 +369,9 @@ export const downloadImage = async (
     console.error('Export failed', err)
     alert('Export failed. Note: External images must allow CORS.')
   } finally {
-    controls.forEach((el: Element) => ((el as HTMLElement).style.display = ''))
+    hideForExport.forEach((el: Element, i) => {
+      ;(el as HTMLElement).style.display = previousDisplay[i] || ''
+    })
   }
 }
 

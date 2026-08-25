@@ -502,15 +502,16 @@ const Canvas: React.FC<CanvasProps> = ({
             cursor: mode === 'dragging_guide' ? (activeGuide?.type === 'horizontal' ? 'row-resize' : 'col-resize') : 'default'
             }}
         >
-            {/* Guides (Manual) */}
+            {/* Guides (Manual) — editor-only */}
             {canvasSettings.showGuides && (
             <>
                 {verticalGuides.map((g, i) => (
                 <div 
                     key={`v-${i}`} 
-                    className="absolute top-0 bottom-0 z-40 w-4 -ml-2 flex justify-center group cursor-col-resize hover:bg-cyan-500/10" 
+                    className="editor-only absolute top-0 bottom-0 z-40 w-4 -ml-2 flex justify-center group cursor-col-resize hover:bg-cyan-500/10" 
                     style={{ left: g, display: activeGuide?.index === i && activeGuide?.type === 'vertical' ? 'none' : 'flex' }}
                     onMouseDown={(e) => handleGuideMouseDown(e, 'vertical', i, g)}
+                    data-html2canvas-ignore="true"
                 >
                     <div className="h-full w-px bg-cyan-500"></div>
                 </div>
@@ -518,9 +519,10 @@ const Canvas: React.FC<CanvasProps> = ({
                 {horizontalGuides.map((g, i) => (
                 <div 
                     key={`h-${i}`} 
-                    className="absolute left-0 right-0 z-40 h-4 -mt-2 flex flex-col justify-center group cursor-row-resize hover:bg-cyan-500/10" 
+                    className="editor-only absolute left-0 right-0 z-40 h-4 -mt-2 flex flex-col justify-center group cursor-row-resize hover:bg-cyan-500/10" 
                     style={{ top: g, display: activeGuide?.index === i && activeGuide?.type === 'horizontal' ? 'none' : 'flex' }}
                     onMouseDown={(e) => handleGuideMouseDown(e, 'horizontal', i, g)}
+                    data-html2canvas-ignore="true"
                 >
                     <div className="w-full h-px bg-cyan-500"></div>
                 </div>
@@ -528,32 +530,34 @@ const Canvas: React.FC<CanvasProps> = ({
                 
                 {activeGuide && (
                 <div 
-                    className={`absolute bg-cyan-500 z-50 pointer-events-none ${activeGuide.type === 'horizontal' ? 'w-full h-px' : 'h-full w-px'}`}
+                    className={`editor-only absolute bg-cyan-500 z-50 pointer-events-none ${activeGuide.type === 'horizontal' ? 'w-full h-px' : 'h-full w-px'}`}
                     style={{ 
                     left: activeGuide.type === 'vertical' ? activeGuide.pos : 0, 
                     top: activeGuide.type === 'horizontal' ? activeGuide.pos : 0 
                     }}
+                    data-html2canvas-ignore="true"
                 />
                 )}
             </>
             )}
 
-            {/* Smart Snap Lines */}
+            {/* Smart Snap Lines — editor-only */}
             {snapLines.map((line, i) => (
                <div 
                   key={`snap-${i}`}
-                  className="absolute bg-red-500 z-[60] pointer-events-none"
+                  className="editor-only absolute bg-red-500 z-[60] pointer-events-none"
                   style={{
                       left: line.orientation === 'vertical' ? line.pos : 0,
                       top: line.orientation === 'horizontal' ? line.pos : 0,
                       width: line.orientation === 'vertical' ? '1px' : '100%',
                       height: line.orientation === 'horizontal' ? '1px' : '100%',
                   }}
+                  data-html2canvas-ignore="true"
                />
             ))}
 
-            {/* Margins Reference Lines (Extended to edges) */}
-            <div className="absolute inset-0 pointer-events-none z-[4]">
+            {/* Margins Reference Lines — editor-only (never exported) */}
+            <div className="editor-only absolute inset-0 pointer-events-none z-[4]" aria-hidden="true" data-html2canvas-ignore="true">
                 {/* Top Margin */}
                 <div 
                     className="absolute left-0 right-0 border-t border-dashed border-blue-200" 
@@ -652,7 +656,7 @@ const Canvas: React.FC<CanvasProps> = ({
                 )}
 
                 {isSelected && !el.isLocked && (
-                    <>
+                    <div className="editor-only controls" data-html2canvas-ignore="true">
                     <div className="absolute inset-0 border-2 border-blue-500 pointer-events-none"></div>
                     
                     {/* Radius Handles - Box/Image Only */}
@@ -773,7 +777,7 @@ const Canvas: React.FC<CanvasProps> = ({
                     <div className="absolute top-1/2 -translate-y-1/2 -right-0.5 w-1.5 h-4 bg-white border border-blue-500 rounded-md cursor-e-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'e')} />
                     <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-4 h-1.5 bg-white border border-blue-500 rounded-md cursor-s-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 's')} />
                     <div className="absolute top-1/2 -translate-y-1/2 -left-0.5 w-1.5 h-4 bg-white border border-blue-500 rounded-md cursor-w-resize z-30" onMouseDown={(e) => handleResizeMouseDown(e, 'w')} />
-                    </>
+                    </div>
                 )}
                 </div>
             );
@@ -781,7 +785,7 @@ const Canvas: React.FC<CanvasProps> = ({
             
             {/* Floating Shape Toolbar */}
             {selectedElement && !selectedElement.isLocked && (
-                <div className="floating-toolbar">
+                <div className="floating-toolbar editor-only" data-html2canvas-ignore="true">
                   <FloatingShapeToolbar 
                     element={selectedElement} 
                     elements={elements} 
