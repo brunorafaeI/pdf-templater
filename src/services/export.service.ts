@@ -14,6 +14,29 @@ const cssToStyleString = (style: Record<string, unknown>): string => {
     .join(' ')
 }
 
+/** SVG shapes store fill/stroke in style; path data in content. Match Canvas rendering. */
+const buildSvgMarkup = (
+  content: string | undefined,
+  style: Record<string, unknown>,
+  width: number
+): string => {
+  const fill = String(style.backgroundColor || 'transparent')
+  const stroke = String(style.borderColor || 'transparent')
+  const borderWidth = parseInt(String(style.borderWidth ?? '0'), 10) || 0
+  const strokeWidth = borderWidth * (100 / Math.max(width, 1))
+  const borderStyle = String(style.borderStyle || '')
+  const dash =
+    borderStyle === 'dashed'
+      ? ' stroke-dasharray="5,5"'
+      : borderStyle === 'dotted'
+        ? ' stroke-dasharray="2,2"'
+        : ''
+
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width: 100%; height: 100%; overflow: visible; display: block;">
+          <path d="${content || ''}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"${dash} vector-effect="non-scaling-stroke" />
+        </svg>`
+}
+
 export const generateGotenbergHTML = (state: TemplateState) => {
   const { pages, canvasSettings } = state
 
@@ -106,7 +129,17 @@ export const generateGotenbergHTML = (state: TemplateState) => {
         transform: `rotate(${rotation || 0}deg)`,
       }
 
-      const combinedStyle = { ...style, ...positionStyle }
+      // SVG fill lives on <path>; keep wrapper transparent (like Canvas)
+      const combinedStyle =
+        type === 'svg'
+          ? {
+              ...positionStyle,
+              backgroundColor: 'transparent',
+              borderColor: 'transparent',
+              borderWidth: '0px',
+              padding: '0px',
+            }
+          : { ...style, ...positionStyle }
       const styleStr = cssToStyleString(combinedStyle as Record<string, unknown>)
 
       indexHtml += `    <div class="element" style="${styleStr}">\n`
@@ -120,9 +153,7 @@ export const generateGotenbergHTML = (state: TemplateState) => {
       } else if (type === 'box' || type === 'circle' || type === 'line') {
         indexHtml += `        <div style="width: 100%; height: 100%; border-radius: ${style.borderRadius || '0'};"></div>\n`
       } else if (type === 'svg') {
-        indexHtml += `        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width: 100%; height: 100%; overflow: visible;">
-          <path d="${content}" fill="${style.backgroundColor || 'transparent'}" stroke="${style.borderColor || 'transparent'}" stroke-width="${parseInt(style.borderWidth?.toString() || '0') * (100 / width)}" vector-effect="non-scaling-stroke" />
-        </svg>\n`
+        indexHtml += `        ${buildSvgMarkup(content, style as Record<string, unknown>, width)}\n`
       }
 
       indexHtml += `      </div>\n`
@@ -284,6 +315,10 @@ export const generateHTML = (pages: Page[], backgroundColor: string): string => 
           if (el.type === 'image') {
             const imgSrc = (el.content || '').replace(/"/g, '&quot;')
             return `<img class="element" src="${imgSrc}" style="${commonStyle}; object-fit: cover;" />`
+          }
+          if (el.type === 'svg') {
+            const wrapperStyle = `left: ${el.x}px; top: ${el.y}px; width: ${el.width}px; height: ${el.height}px; transform: rotate(${el.rotation || 0}deg); background-color: transparent; border: none; padding: 0;`
+            return `<div class="element" style="${wrapperStyle}">${buildSvgMarkup(el.content, el.style as Record<string, unknown>, el.width)}</div>`
           }
           return `<div class="element" style="${commonStyle}; border-radius: ${el.style.borderRadius || '0'}"></div>`
         })
